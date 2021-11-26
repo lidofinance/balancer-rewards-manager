@@ -1,23 +1,16 @@
 import sys
 import time
-from brownie import RewardsManager
+from brownie import BalancerRewardsController
 from utils.config import (
     ldo_token_address,
+    lido_dao_agent_address,
     get_is_live,
     get_deployer_account,
     prompt_bool,
     get_env
 )
+from utils import deployment
 
-
-def deploy_manager(allocator, start_date, tx_params):
-    # Etherscan doesn't support Vyper verification yet
-    return RewardsManager.deploy(
-        allocator, # _allocator
-        start_date, # _start_date
-        tx_params,
-        publish_source=False,
-    )
 
 def main():
     is_live = get_is_live()
@@ -40,10 +33,30 @@ def main():
         print('Aborting')
         return
 
-    manager_contract = deploy_manager(
+    (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
         allocator,
         start_date,
         tx_params={"from": deployer}
     )
 
-    manager_contract.transfer_ownership(owner, {"from": deployer})
+    print('Manager contract: ', manager_contract)
+    print('Rewards contract: ', rewards_contract)
+
+
+def deploy_manager_and_reward_contract(allocator, start_date, tx_params):
+    # Etherscan doesn't support Vyper verification yet
+
+    rewarder_contract = deployment.deploy_rewarder_contract(tx_params=tx_params)
+    rewards_contract =  BalancerRewardsController.deploy(
+        allocator, # _allocator
+        rewarder_contract, # distributor
+        start_date, # _start_date
+        tx_params,
+        publish_source=False,
+    )
+    rewarder_contract.set_rewards_contract(rewards_contract, tx_params)
+    
+    rewards_contract.transfer_ownership(lido_dao_agent_address, tx_params)
+    rewarder_contract.transfer_ownership(lido_dao_agent_address, tx_params)
+
+    return (rewarder_contract, rewards_contract)
