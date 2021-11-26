@@ -1,7 +1,7 @@
 # Balancer rewards manager
 
-This repository contains Lido reward manager contract for [Balancer Merkle Rewards contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleRedeem.sol).
-It weekly approves certain amount of LDO to be spendable by Balancer contract.
+This repository contains Lido reward manager contract for [Balancer Merkle Rewards contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol).
+It weekly approves certain amount of LDO to be spendable by Balancer contract. And provides interface to general rewards manager.
 
 # Rewards Manager
 
@@ -13,6 +13,8 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 `ALLOCATOR` balancer allocator account
 
+`DISTRIBUTOR` dewards distributor account
+
 `OWNER` address of manager owner
 
 `START_DATE` timestamp of program start date
@@ -23,9 +25,9 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 Returns current allowance of Reward contract.
 
-##### `seed_allocations(_week: uint256, _merkle_root: bytes32, _amount: uint256):`
+##### `seed_allocations(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
 
-Wrapper for `seedAllocations` of Merkle contract. 
+Wrapper for `createDistribution` of Merkle contract. 
 Can be called by allocator EOA only.
 
 Reverts if `_amount` is greater than Manager balance or allocations limit.
@@ -47,19 +49,10 @@ Events:
 
 ```vyper=
 event OwnerChanged:
+    old_owner: address
     new_owner: address
 ```
 
-##### `transfer_rewards_contract_ownership(_to: address)`
-
-Changes `OWNER`. Can be called by owner only.
-
-Events:
-
-```vyper=
-event RewardContractOwnershipTransfered:
-    new_owner: address
-```
 
 ##### `set_allocator(_new_allocator: address)`
 
@@ -69,29 +62,27 @@ Events:
 
 ```vyper=
 event AllocatorChanged:
+    old_allocator: address
     new_allocator: address
 ```
 
-##### `set_rewards_limit_per_period(_new_limit: uint256)`
+##### `set_distributor(_new_distributor: address)`
 
-Changes reward token limit per period `rewards_period_duration`. Can be called by owner only. 
-Updates current allocations limit and set rewards limit for next periods.
+Changes `DISTRIBUTOR`. Can be called by owner only.
 
 Events:
+
 ```vyper=
-event RewardsLimitChanged:
-    new_limit: uint256
+event RewardsDistributorChanged:
+    old_distributor: address
+    new_distributor: address
 ```
+
 
 ##### `set_allocations_limit(_new_allocations_limit: uint256)`
 
 Sets new allocations limit for Reward contract.
 
-Events:
-```vyper=
-event AllocationsLimitChanged:
-    new_limit: uint256
-```
 
 ##### `pause()`
 

@@ -1,7 +1,7 @@
 import time
 import pytest
-from brownie import MerkleMock, chain, accounts
-from scripts.deploy import deploy_manager
+from brownie import chain, accounts
+from scripts.deploy import deploy_manager_and_reward_contract
 from utils.config import lido_dao_voting_address
 
 
@@ -23,7 +23,7 @@ def deployer(accounts):
 
 @pytest.fixture(scope='module')
 def balancer_allocator(accounts):
-    return accounts[1]
+    return accounts.at('0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa',force=True)
 
 
 @pytest.fixture(scope='module')
@@ -64,18 +64,22 @@ def program_start_date():
 
 @pytest.fixture(scope='module')
 def merkle_contract(interface):
-    return interface.MerkleRedeem('0x884226c9f7b7205f607922E0431419276a64CF8f')
+    return interface.MerkleOrchard('0x9e98736b58067870D1d01ec34b375c75a19E1720')
 
 
 @pytest.fixture(scope='module')
-def rewards_manager(deployer, balancer_allocator, ldo_agent, interface, merkle_contract, program_start_date):
-    manager_contract = deploy_manager( balancer_allocator, program_start_date, {"from": deployer})
-    manager_contract.transfer_ownership(ldo_agent, {"from": deployer})
-    merkle_owner = merkle_contract.owner()
-    if merkle_owner != manager_contract:
-        merkle_contract.transferOwnership(manager_contract, {"from": merkle_owner})
+def rewarder(deployer, balancer_allocator, program_start_date):
+    return deploy_manager_and_reward_contract(balancer_allocator, program_start_date, {"from": deployer})
 
-    return manager_contract
+
+@pytest.fixture(scope='module')
+def rewards_manager(rewarder):
+    return rewarder[0]
+
+
+@pytest.fixture(scope='module')
+def rewards_contract(rewarder):
+    return rewarder[1]
 
 
 class Helpers:
