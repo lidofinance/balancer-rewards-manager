@@ -30,10 +30,6 @@ event Allocation:
     amount: uint256
 
 
-event RewardsLimitChanged:
-    new_limit: uint256
-
-
 event ERC20TokenRecovered:
     token: indexed(address)
     amount: uint256
@@ -84,7 +80,6 @@ def __init__(
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
     log Unpaused(self.owner)
-    log RewardsLimitChanged(self.rewards_rate_per_period)
 
 
 @internal
@@ -212,14 +207,13 @@ def set_allocations_limit(_new_allocations_limit: uint256):
     self._set_allocations_limit(_new_allocations_limit)
 
 
-@external
-def seed_allocations(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
+@internal
+def _create_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
     """
     @notice
         Wraps createDistribution(token: ERC20, merkleRoot: bytes32, amount: uint256, distributionId: uint256)
         of Merkle rewards contract with amount limited by available_allocations()
     """
-    assert msg.sender == self.allocator, "manager: not permitted"
     assert self.is_paused == False, "manager: contract is paused"
 
     assert ERC20(rewards_token).balanceOf(self) >= _amount, "manager: reward token balance is low"
@@ -236,10 +230,23 @@ def seed_allocations(_merkle_root: bytes32, _amount: uint256, _distribution_id: 
 
 
 @external
+def create_ldo_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
+    assert msg.sender == self.allocator, "manager: not permitted"
+    self._create_distribution(_merkle_root, _amount, _distribution_id)
+
+
+@external 
+def create_distribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
+    assert msg.sender == self.allocator, "manager: not permitted"
+    assert rewards_token == token, "manager: only LDO distribution allowed"
+    self._create_distribution(_merkle_root, _amount, _distribution_id)
+
+
+@external
 def pause():
     """
     @notice
-        Pause allocations increasing and rejects seedAllocations calling
+        Pause allocations increasing and rejects _create_distribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
     
@@ -253,7 +260,7 @@ def pause():
 def unpause(_start_date: uint256, _new_allocations_limit: uint256):
     """
     @notice
-        Unpause allocations increasing and allows seedAllocations calling
+        Unpause allocations increasing and allows _create_distribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
     
