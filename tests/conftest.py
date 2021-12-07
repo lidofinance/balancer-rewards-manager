@@ -32,6 +32,11 @@ def stranger(accounts):
 
 
 @pytest.fixture(scope='module')
+def initializer():
+    return accounts[8]
+
+
+@pytest.fixture(scope='module')
 def ldo_holder(accounts):
     return accounts.at('0x3e40d73eb977dc6a537af587d48316fee66e9c8c',force=True)
 
@@ -68,8 +73,8 @@ def merkle_contract(interface):
 
 
 @pytest.fixture(scope='module')
-def rewarder(deployer, balancer_allocator, program_start_date):
-    return deploy_manager_and_reward_contract(balancer_allocator, program_start_date, {"from": deployer})
+def rewarder(deployer, balancer_allocator, initializer):
+    return deploy_manager_and_reward_contract(balancer_allocator, initializer, {"from": deployer})
 
 
 @pytest.fixture(scope='module')

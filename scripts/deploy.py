@@ -18,9 +18,11 @@ def main():
     allocator = get_env('ALLOCATOR')
     owner = get_env('OWNER')
     start_date = get_env('START_DATE')
+    initializer = get_env('INITIALIZER')
 
     print('Deployer:', deployer)
     print('Allocator:', allocator)
+    print('Initializer:', initializer)
     print('Owner:', owner)
     print(
         'Program start date:', 
@@ -35,7 +37,7 @@ def main():
 
     (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
         allocator,
-        start_date,
+        initializer,
         tx_params={"from": deployer}
     )
 
@@ -43,14 +45,14 @@ def main():
     print('Rewards contract: ', rewards_contract)
 
 
-def deploy_manager_and_reward_contract(allocator, start_date, tx_params):
+def deploy_manager_and_reward_contract(allocator, initializer, tx_params):
     # Etherscan doesn't support Vyper verification yet
 
     rewarder_contract = deployment.deploy_rewarder_contract(tx_params=tx_params)
     rewards_contract =  BalancerRewardsController.deploy(
         allocator, # _allocator
         rewarder_contract, # distributor
-        start_date, # _start_date
+        initializer, # _initializer
         tx_params,
         publish_source=False,
     )

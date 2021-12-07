@@ -1,19 +1,30 @@
 import pytest
 from brownie import reverts, chain
 from math import floor
-from scripts.deploy import deploy_manager_and_reward_contract
 from utils.config import steth_token_address
 
 rewards_limit = 75 * 1000 * 10**18
 rewards_period = 3600 * 24 * 7
 amount = 300_000 * 10**18
+start_date = 1638748800 #  Monday, 6 December 2021, 0:00:00
 
-def test_init(ldo_agent, balancer_allocator, program_start_date, rewarder):
-    assert rewarder[1].owner() == ldo_agent
-    assert rewarder[1].allocator() == balancer_allocator
-    assert rewarder[1].rewards_rate_per_period() == 0
-    assert rewarder[1].accounted_allocations_limit() == 0
-    assert rewarder[1].last_accounted_period_start_date() == program_start_date - rewards_period
+def test_init(ldo_agent, balancer_allocator, initializer, rewards_contract):
+    assert rewards_contract.owner() == ldo_agent
+    assert rewards_contract.allocator() == balancer_allocator
+    assert rewards_contract.rewards_rate_per_period() == 0
+    assert rewards_contract.accounted_allocations_limit() == 0
+    assert rewards_contract.last_accounted_period_start_date() == 0
+    assert rewards_contract.initializer() == initializer
+
+
+def test_initialize(rewards_contract, initializer, stranger):
+    with reverts('manager: not permitted'):
+        rewards_contract.initialize(start_date, {"from": stranger})
+
+    rewards_contract.initialize(start_date, {"from": initializer})
+    assert rewards_contract.last_accounted_period_start_date() == start_date - rewards_period
+    with reverts('manager: not permitted'):
+        rewards_contract.initialize(start_date, {"from": initializer})
 
 
 def test_transfer_ownership(
@@ -96,7 +107,7 @@ def test_allocations_limit_paused_calculation(
 
 
     assert rewards_contract.available_allocations() == 0
-    chain.sleep(floor(1.5 * rewards_period))
+    chain.sleep(floor(1.1 * rewards_period))
     chain.mine()
     assert rewards_contract.available_allocations() == rewards_limit
     rewards_contract.pause({"from": ldo_agent})
