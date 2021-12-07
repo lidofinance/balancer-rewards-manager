@@ -39,7 +39,7 @@ event Allocation:
     amount: uint256
 ```
 
-##### `create_distribution(_token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
+##### `createDistribution(_token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
 
 Wrapper for `createDistribution` of Merkle contract. 
 Can be called by allocator EOA only.

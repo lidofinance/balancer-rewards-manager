@@ -169,9 +169,9 @@ def test_pause(
     assert rewards_contract.is_paused() == False
 
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.create_distribution(steth_token_address, '', 0, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', 0, 0, {"from": balancer_allocator})
 
-    rewards_contract.create_distribution(ldo_token, '', 0, 0, {"from": balancer_allocator})
+    rewards_contract.createDistribution(ldo_token, '', 0, 0, {"from": balancer_allocator})
 
     with reverts():
         rewards_contract.pause({"from": stranger})
@@ -183,9 +183,9 @@ def test_pause(
     assert rewards_contract.available_allocations() == 0
 
     with reverts():
-        rewards_contract.create_distribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
+        rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.create_distribution(steth_token_address, '', 0, 1, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', 0, 1, {"from": balancer_allocator})
 
     with reverts():
         rewards_contract.unpause(program_start_date, 0, {"from": stranger})
@@ -195,8 +195,8 @@ def test_pause(
     assert rewards_contract.is_paused() == False
 
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.create_distribution(steth_token_address, '', 0, 1, {"from": balancer_allocator})
-    rewards_contract.create_distribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', 0, 1, {"from": balancer_allocator})
+    rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
 
 
 def test_set_allocations_limit(
@@ -261,7 +261,7 @@ def test_create_ldo_distribution(
     assert ldo_token.balanceOf(rewards_contract) == 3*rewards_limit
 
 
-def test_create_distribution(
+def test_createDistribution(
     rewards_contract, 
     rewards_manager, 
     dao_treasury, 
@@ -277,11 +277,11 @@ def test_create_distribution(
     rewards_manager.start_next_rewards_period({"from": stranger})
 
     with reverts():
-        rewards_contract.create_distribution(ldo_token, '', 0, 0, {"from": stranger})
+        rewards_contract.createDistribution(ldo_token, '', 0, 0, {"from": stranger})
 
     rewards_contract.pause({"from": ldo_agent})
     with reverts():
-        rewards_contract.create_distribution(ldo_token, '', 0,  0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(ldo_token, '', 0,  0, {"from": balancer_allocator})
     rewards_contract.unpause(program_start_date, 0, {"from": ldo_agent})
 
 
@@ -290,11 +290,11 @@ def test_create_distribution(
     assert rewards_contract.available_allocations() == rewards_limit
     
     with reverts('manager: not enought amount approved'):
-        rewards_contract.create_distribution(ldo_token, '', 76000 * 10**18, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(ldo_token, '', 76000 * 10**18, 0, {"from": balancer_allocator})
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.create_distribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_allocator})
 
-    tx = rewards_contract.create_distribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
+    tx = rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
     helpers.assert_single_event_named("Allocation", tx, {"amount": rewards_limit})
     assert rewards_contract.available_allocations() == 0
     assert ldo_token.balanceOf(rewards_contract) == 3*rewards_limit

@@ -236,7 +236,7 @@ def create_ldo_distribution(_merkle_root: bytes32, _amount: uint256, _distributi
 
 
 @external 
-def create_distribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
+def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
     assert msg.sender == self.allocator, "manager: not permitted"
     assert rewards_token == token, "manager: only LDO distribution allowed"
     self._create_distribution(_merkle_root, _amount, _distribution_id)
