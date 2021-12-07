@@ -232,21 +232,21 @@ def _create_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_
 @external
 def create_ldo_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
     assert msg.sender == self.allocator, "manager: not permitted"
-    self._create_distribution(_merkle_root, _amount, _distribution_id)
+    self._create_ldo_distribution(_merkle_root, _amount, _distribution_id)
 
 
 @external 
 def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
     assert msg.sender == self.allocator, "manager: not permitted"
     assert rewards_token == token, "manager: only LDO distribution allowed"
-    self._create_distribution(_merkle_root, _amount, _distribution_id)
+    self._create_ldo_distribution(_merkle_root, _amount, _distribution_id)
 
 
 @external
 def pause():
     """
     @notice
-        Pause allocations increasing and rejects _create_distribution calling
+        Pause allocations increasing and rejects _create_ldo_distribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
     
@@ -260,7 +260,7 @@ def pause():
 def unpause(_start_date: uint256, _new_allocations_limit: uint256):
     """
     @notice
-        Unpause allocations increasing and allows _create_distribution calling
+        Unpause allocations increasing and allows _create_ldo_distribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
     
