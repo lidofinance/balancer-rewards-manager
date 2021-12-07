@@ -13,7 +13,7 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 `ALLOCATOR` balancer allocator account
 
-`DISTRIBUTOR` dewards distributor account
+`INITIALIZER` initializer account for setting start date after deployment
 
 `OWNER` address of manager owner
 
