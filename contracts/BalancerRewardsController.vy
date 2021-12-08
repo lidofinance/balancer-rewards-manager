@@ -49,7 +49,7 @@ allocator: public(address)
 distributor: public(address)
 initializer: public(address)
 
-rewards_contract: constant(address) = 0x9e98736b58067870D1d01ec34b375c75a19E1720
+rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
 accounted_allocations_limit: public(uint256)
