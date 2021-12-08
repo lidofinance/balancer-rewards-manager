@@ -22,6 +22,11 @@ def deployer(accounts):
 
 
 @pytest.fixture(scope='module')
+def ape(accounts):
+    return accounts[0]
+
+
+@pytest.fixture(scope='module')
 def balancer_allocator(accounts):
     return accounts.at('0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa',force=True)
 
@@ -30,15 +35,9 @@ def balancer_allocator(accounts):
 def stranger(accounts):
     return accounts[9]
 
-
-@pytest.fixture(scope='module')
-def initializer():
-    return accounts[8]
-
-
 @pytest.fixture(scope='module')
 def ldo_holder(accounts, ldo_token, dao_treasury):
-    ldo_token.transfer(accounts[8], 10**18, {"from": dao_treasury})
+    ldo_token.transfer(accounts[7], 10**18, {"from": dao_treasury})
     return accounts[7]
 
 
@@ -74,8 +73,8 @@ def merkle_contract(interface):
 
 
 @pytest.fixture(scope='module')
-def rewarder(deployer, balancer_allocator, initializer):
-    return deploy_manager_and_reward_contract(balancer_allocator, initializer, {"from": deployer})
+def rewarder(deployer, balancer_allocator):
+    return deploy_manager_and_reward_contract(balancer_allocator, {"from": deployer})
 
 
 @pytest.fixture(scope='module')

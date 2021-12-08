@@ -38,7 +38,7 @@ def main():
     (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
         allocator,
         initializer,
-        tx_params={"from": deployer}
+        tx_params={"from": deployer, "priority_fee": "4 gwei"}
     )
 
     print('Manager contract: ', manager_contract)
@@ -46,8 +46,6 @@ def main():
 
 
 def deploy_manager_and_reward_contract(allocator, initializer, tx_params):
-    # Etherscan doesn't support Vyper verification yet
-
     rewarder_contract = deployment.deploy_rewarder_contract(tx_params=tx_params)
     rewards_contract =  BalancerRewardsController.deploy(
         allocator, # _allocator

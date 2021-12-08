@@ -11,6 +11,3 @@ networks:
       evm_version: istanbul
       mnemonic: brownie
       fork: mainnet
-
-dependencies:
-  - lidofinance/staking-rewards-sushi@0.1.0
