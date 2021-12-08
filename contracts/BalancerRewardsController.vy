@@ -1,5 +1,5 @@
 # @version 0.3.0
-# @author bulbozaur <alexandrtarelkin92@gmail.com>
+# @author bulbozaur <info@lido.fi>
 # @notice A manager contract for the Balancer Merkle Rewards contract.
 
 # @license MIT
@@ -26,7 +26,12 @@ event RewardsDistributorChanged:
     new_distributor: indexed(address)
 
 
-event Allocation:
+event InitializerChanged:
+    old_initializer: indexed(address)
+    new_initializer: indexed(address)
+
+
+event RewardsDistributed:
     amount: uint256
 
 
@@ -81,6 +86,7 @@ def __init__(
     log OwnerChanged(ZERO_ADDRESS, self.owner)
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
+    log InitializerChanged(ZERO_ADDRESS, self.initializer)
     log Unpaused(self.owner)
 
 
@@ -89,6 +95,7 @@ def initialize(_start_date: uint256):
     assert msg.sender == self.initializer, "manager: not permitted"
     self.last_accounted_period_start_date = _start_date - period_duration
     self.initializer = ZERO_ADDRESS
+    log InitializerChanged(msg.sender, ZERO_ADDRESS)
 
 
 @internal
@@ -235,7 +242,7 @@ def _create_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_
 
     IMerkleRewardsContract(rewards_contract).createDistribution(rewards_token, _merkle_root, _amount, _distribution_id)
 
-    log Allocation(_amount)
+    log RewardsDistributed(_amount)
 
 
 @external
@@ -285,10 +292,11 @@ def transfer_ownership(_to: address):
     """
     @notice Changes the contract owner. Can only be called by the current owner.
     """
-    assert msg.sender == self.owner, "manager: not permitted"
+    old_owner: address = self.owner
+    assert msg.sender == old_owner, "manager: not permitted"
     assert _to != ZERO_ADDRESS
-    log OwnerChanged(self.owner, _to)
     self.owner = _to
+    log OwnerChanged(old_owner, _to)
 
 
 @external
@@ -296,9 +304,10 @@ def set_allocator(_new_allocator: address):
     """
     @notice Changes the allocator. Can only be called by the current owner.
     """
+    old_allocator: address = self.allocator
     assert msg.sender == self.owner, "manager: not permitted"
-    log AllocatorChanged(self.allocator, _new_allocator)
     self.allocator = _new_allocator
+    log AllocatorChanged(old_allocator, _new_allocator)
 
 
 @external
@@ -306,9 +315,10 @@ def set_distributor(_new_distributor: address):
     """
     @notice Changes the distributor. Can only be called by the current owner.
     """
+    old_distributor: address = self.distributor
     assert msg.sender == self.owner, "manager: not permitted"
-    log RewardsDistributorChanged(self.distributor, _new_distributor)
     self.distributor = _new_distributor
+    log RewardsDistributorChanged(old_distributor, _new_distributor)
 
 
 @external
