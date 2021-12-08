@@ -37,8 +37,9 @@ def initializer():
 
 
 @pytest.fixture(scope='module')
-def ldo_holder(accounts):
-    return accounts.at('0x3e40d73eb977dc6a537af587d48316fee66e9c8c',force=True)
+def ldo_holder(accounts, ldo_token, dao_treasury):
+    ldo_token.transfer(accounts[8], 10**18, {"from": dao_treasury})
+    return accounts[7]
 
 
 @pytest.fixture(scope='module')
@@ -63,13 +64,13 @@ def dao_treasury():
 
 @pytest.fixture(scope='module')
 def program_start_date():
-    beging_of_the_day = int(time.time()/86400)*86400
-    return beging_of_the_day + 604800
+    begining_of_the_day = int(time.time()/86400)*86400
+    return begining_of_the_day + 604800
 
 
 @pytest.fixture(scope='module')
 def merkle_contract(interface):
-    return interface.MerkleOrchard('0x9e98736b58067870D1d01ec34b375c75a19E1720')
+    return interface.MerkleOrchard('0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca')
 
 
 @pytest.fixture(scope='module')

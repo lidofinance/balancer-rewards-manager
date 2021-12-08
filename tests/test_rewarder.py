@@ -267,7 +267,7 @@ def test_create_ldo_distribution(
         rewards_contract.create_ldo_distribution('', 76000 * 10**18, 0, {"from": balancer_allocator})
 
     tx = rewards_contract.create_ldo_distribution('', rewards_limit, 0, {"from": balancer_allocator})
-    helpers.assert_single_event_named("Allocation", tx, {"amount": rewards_limit})
+    helpers.assert_single_event_named("RewardsDistributed", tx, {"amount": rewards_limit})
     assert rewards_contract.available_allocations() == 0
     assert ldo_token.balanceOf(rewards_contract) == 3*rewards_limit
 
@@ -306,7 +306,7 @@ def test_createDistribution(
         rewards_contract.createDistribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_allocator})
 
     tx = rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
-    helpers.assert_single_event_named("Allocation", tx, {"amount": rewards_limit})
+    helpers.assert_single_event_named("RewardsDistributed", tx, {"amount": rewards_limit})
     assert rewards_contract.available_allocations() == 0
     assert ldo_token.balanceOf(rewards_contract) == 3*rewards_limit
 
