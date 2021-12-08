@@ -15,11 +15,10 @@ def test_start_program(
     ldo_token, 
     dao_treasury, 
     deployer,
-    initializer,
     stranger
     ):
 
-    (rewards_manager, rewards_contract) = deploy_manager_and_reward_contract(balancer_allocator, initializer, {"from": deployer})
+    (rewards_manager, rewards_contract) = deploy_manager_and_reward_contract(balancer_allocator, {"from": deployer})
 
     chain.sleep(1639137600 - chain.time())  # Wiating for omnibus finishing Fri Dec 10 2021 12:00:00 GMT+0000 
     chain.mine()
@@ -27,13 +26,6 @@ def test_start_program(
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
 
     rewards_manager.start_next_rewards_period({"from": stranger})
-
-    with reverts('manager: not permitted'):
-        rewards_contract.initialize(start_date, {"from": stranger})
-
-    rewards_contract.initialize(start_date, {"from": initializer})
-    with reverts('manager: not permitted'):
-        rewards_contract.initialize(start_date, {"from": initializer})
     
     assert rewards_contract.available_allocations() == rewards_limit
 
@@ -72,7 +64,7 @@ def test_start_program_next_iteration(
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     rewards_manager.start_next_rewards_period({"from": stranger})
 
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allocations() == rewards_limit
 
     chain.sleep(4*rewards_period) 
     chain.mine()

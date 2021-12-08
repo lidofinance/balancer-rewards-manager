@@ -8,23 +8,12 @@ rewards_period = 3600 * 24 * 7
 amount = 300_000 * 10**18
 start_date = 1638748800 #  Monday, 6 December 2021, 0:00:00
 
-def test_init(ldo_agent, balancer_allocator, initializer, rewards_contract):
+def test_init(ldo_agent, balancer_allocator, rewards_contract):
     assert rewards_contract.owner() == ldo_agent
     assert rewards_contract.allocator() == balancer_allocator
     assert rewards_contract.rewards_rate_per_period() == 0
     assert rewards_contract.accounted_allocations_limit() == 0
     assert rewards_contract.last_accounted_period_start_date() == 0
-    assert rewards_contract.initializer() == initializer
-
-
-def test_initialize(rewards_contract, initializer, stranger):
-    with reverts('manager: not permitted'):
-        rewards_contract.initialize(start_date, {"from": stranger})
-
-    rewards_contract.initialize(start_date, {"from": initializer})
-    assert rewards_contract.last_accounted_period_start_date() == start_date - rewards_period
-    with reverts('manager: not permitted'):
-        rewards_contract.initialize(start_date, {"from": initializer})
 
 
 def test_transfer_ownership(
@@ -70,8 +59,8 @@ def test_set_distributor(rewards_contract, rewards_manager, ldo_agent, balancer_
     'period', 
     [
         rewards_period, 
-        rewards_period - 1, 
-        rewards_period + 1, 
+        rewards_period - 10, 
+        rewards_period + 10, 
         floor(0.5*rewards_period), 
         floor(0.9*rewards_period), 
         floor(2.5*rewards_period)
@@ -82,14 +71,18 @@ def test_allocations_limit_basic_calculation(rewards_manager, rewards_contract, 
     assert ldo_token.balanceOf(rewards_manager) == amount
     rewards_manager.start_next_rewards_period({"from": stranger})
 
-    start_date = rewards_contract.last_accounted_period_start_date()
-    assert rewards_contract.available_allocations() == 0
+    start_date = rewards_contract.last_accounted_period_start_date() + rewards_period
+    assert rewards_contract.available_allocations() == rewards_limit
+
     chain.sleep(start_date + period - chain.time())
     chain.mine()
-    assert rewards_contract.available_allocations() == floor(period/rewards_period) * rewards_limit
-    chain.sleep(period)
+
+    assert rewards_contract.available_allocations() == min(4, floor(period/rewards_period + 1)) * rewards_limit
+    
+    chain.sleep(rewards_period)
     chain.mine()
-    assert rewards_contract.available_allocations() == min(4, floor(2 * period/rewards_period)) * rewards_limit
+    
+    assert rewards_contract.available_allocations() == min(4, floor(period/rewards_period + 2 )) * rewards_limit
     
 
 def test_allocations_limit_paused_calculation(
@@ -106,61 +99,20 @@ def test_allocations_limit_paused_calculation(
     rewards_manager.start_next_rewards_period({"from": stranger})
 
 
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allocations() == rewards_limit
     chain.sleep(floor(1.1 * rewards_period))
     chain.mine()
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allocations() == 2 * rewards_limit
     rewards_contract.pause({"from": ldo_agent})
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allocations() == 2 * rewards_limit
     chain.sleep(rewards_period)
     chain.mine()
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allocations() == 2 * rewards_limit
 
     rewards_contract.unpause(program_start_date + 2 * rewards_period, rewards_limit, {"from": ldo_agent})
     chain.sleep(rewards_period)
     chain.mine()
     assert rewards_contract.available_allocations() == 2 * rewards_limit
-
-
-def test_pause(
-    rewards_contract, 
-    rewards_manager, 
-    dao_treasury, 
-    ldo_token, 
-    stranger, 
-    ldo_agent, 
-    helpers, 
-    balancer_allocator, 
-    program_start_date
-    ):
-    ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
-    assert ldo_token.balanceOf(rewards_manager) == amount
-    rewards_manager.start_next_rewards_period({"from": stranger})
-
-    assert rewards_contract.is_paused() == False
-
-    rewards_contract.create_ldo_distribution('', 0, 0, {"from": balancer_allocator})
-
-    with reverts():
-        rewards_contract.pause({"from": stranger})
-
-    tx = rewards_contract.pause({"from": ldo_agent})
-    helpers.assert_single_event_named("Paused", tx, {"actor": ldo_agent})
-    assert rewards_contract.is_paused() == True
-
-    assert rewards_contract.available_allocations() == 0
-
-    with reverts():
-        rewards_contract.create_ldo_distribution('', 0, 1, {"from": balancer_allocator})
-
-    with reverts():
-        rewards_contract.unpause(program_start_date, 0, {"from": stranger})
-
-    tx = rewards_contract.unpause(program_start_date, 0, {"from": ldo_agent})
-    helpers.assert_single_event_named("Unpaused", tx, {"actor": ldo_agent})
-    assert rewards_contract.is_paused() == False
-
-    rewards_contract.create_ldo_distribution('', 0, 1, {"from": balancer_allocator})
 
 def test_pause(
     rewards_contract, 
@@ -191,7 +143,7 @@ def test_pause(
     helpers.assert_single_event_named("Paused", tx, {"actor": ldo_agent})
     assert rewards_contract.is_paused() == True
 
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allocations() == rewards_limit
 
     with reverts():
         rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
@@ -222,11 +174,11 @@ def test_set_allocations_limit(
     assert ldo_token.balanceOf(rewards_manager) == amount
     rewards_manager.start_next_rewards_period({"from": stranger})
 
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allocations() == rewards_limit
 
     chain.sleep(rewards_period)
     chain.mine()
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allocations() == 2 * rewards_limit
 
     with reverts():
         rewards_contract.set_allocations_limit(10, {"from": stranger})

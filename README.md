@@ -1,6 +1,6 @@
 # Balancer rewards manager
 
-This repository contains Lido reward manager contract for [Balancer Merkle Rewards contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol).
+This repository contains Lido reward manager for [Balancer Merkle Orchard contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol).
 It weekly approves certain amount of LDO to be spendable by Balancer contract. And provides interface to general rewards manager.
 
 # Rewards Manager
@@ -13,11 +13,7 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 `ALLOCATOR` balancer allocator account
 
-`INITIALIZER` initializer account for setting start date after deployment
-
-`OWNER` address of manager owner
-
-`START_DATE` timestamp of program start date
+`OWNER` address of manager owne
 
 ## Balancer side
 
@@ -25,24 +21,10 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 Returns current allowance of Reward contract.
 
-##### `create_ldo_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
-
-Wrapper for `createDistribution` of Merkle contract. 
-Can be called by allocator EOA only.
-
-Reverts if `_amount` is greater than Manager balance or allocations limit.
-
-Events:
-
-```vyper=
-event Allocation:
-    amount: uint256
-```
-
 ##### `createDistribution(_token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
 
-Wrapper for `createDistribution` of Merkle contract. 
-Can be called by allocator EOA only.
+Wrapper for `createDistribution` of MerkleOrchard contract.
+Can be called by allocator address only.
 
 Reverts if `_amount` is greater than Manager balance or allocations limit.
 Reverts if `_token` is not LDO.
@@ -50,7 +32,7 @@ Reverts if `_token` is not LDO.
 Events:
 
 ```vyper=
-event Allocation:
+event RewardsDistributed:
     amount: uint256
 ```
 

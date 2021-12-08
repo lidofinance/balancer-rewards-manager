@@ -26,11 +26,6 @@ event RewardsDistributorChanged:
     new_distributor: indexed(address)
 
 
-event InitializerChanged:
-    old_initializer: indexed(address)
-    new_initializer: indexed(address)
-
-
 event RewardsDistributed:
     amount: uint256
 
@@ -52,7 +47,6 @@ event Unpaused:
 owner: public(address)
 allocator: public(address)
 distributor: public(address)
-initializer: public(address)
 
 rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
@@ -70,13 +64,11 @@ is_paused: public(bool)
 @external
 def __init__(
     _allocator: address,
-    _distributor: address,
-    _initializer: address
+    _distributor: address
 ):
     self.owner = msg.sender
     self.allocator = _allocator
     self.distributor = _distributor
-    self.initializer = _initializer
 
     self.accounted_allocations_limit = 0
     self.is_paused = False
@@ -86,16 +78,7 @@ def __init__(
     log OwnerChanged(ZERO_ADDRESS, self.owner)
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
-    log InitializerChanged(ZERO_ADDRESS, self.initializer)
     log Unpaused(self.owner)
-
-
-@external
-def initialize(_start_date: uint256):
-    assert msg.sender == self.initializer, "manager: not permitted"
-    self.last_accounted_period_start_date = _start_date - period_duration
-    self.initializer = ZERO_ADDRESS
-    log InitializerChanged(msg.sender, ZERO_ADDRESS)
 
 
 @internal
@@ -210,7 +193,12 @@ def notifyRewardAmount(amount: uint256, holder: address):
     assert amount_to_distribute != 0, "manager: no funds"
 
     self.rewards_rate_per_period = amount_to_distribute / rewards_periods
-    self._update_last_accounted_period_start_date()
+    if self.last_accounted_period_start_date == 0:
+        # set first period to Mon Nov 29 2021 00:00:00 GMT+0000
+        # first allocation will be done at Mon Dec 06 2021 00:00:00 GMT+0000
+        self.last_accounted_period_start_date = 1638144000
+    else:
+        self._update_last_accounted_period_start_date()
     self.max_unaccounted_periods = rewards_periods
 
 

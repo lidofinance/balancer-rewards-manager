@@ -1,15 +1,16 @@
 import sys
 import time
-from brownie import BalancerRewardsController
+from brownie import (
+    BalancerRewardsController,
+    RewardsManager
+)
 from utils.config import (
-    ldo_token_address,
     lido_dao_agent_address,
     get_is_live,
     get_deployer_account,
     prompt_bool,
     get_env
 )
-from utils import deployment
 
 
 def main():
@@ -17,17 +18,10 @@ def main():
     deployer = get_deployer_account(is_live)
     allocator = get_env('ALLOCATOR')
     owner = get_env('OWNER')
-    start_date = get_env('START_DATE')
-    initializer = get_env('INITIALIZER')
 
     print('Deployer:', deployer)
     print('Allocator:', allocator)
-    print('Initializer:', initializer)
     print('Owner:', owner)
-    print(
-        'Program start date:', 
-        time.ctime(int(start_date))
-    )
 
     sys.stdout.write('Proceed? [y/n]: ')
 
@@ -37,7 +31,6 @@ def main():
 
     (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
         allocator,
-        initializer,
         tx_params={"from": deployer, "priority_fee": "4 gwei"}
     )
 
@@ -45,12 +38,11 @@ def main():
     print('Rewards contract: ', rewards_contract)
 
 
-def deploy_manager_and_reward_contract(allocator, initializer, tx_params):
-    rewarder_contract = deployment.deploy_rewarder_contract(tx_params=tx_params)
+def deploy_manager_and_reward_contract(allocator, tx_params):
+    rewarder_contract = RewardsManager.deploy(tx_params)
     rewards_contract =  BalancerRewardsController.deploy(
         allocator, # _allocator
         rewarder_contract, # distributor
-        initializer, # _initializer
         tx_params,
         publish_source=False,
     )
