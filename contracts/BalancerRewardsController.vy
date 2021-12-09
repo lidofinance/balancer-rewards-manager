@@ -200,12 +200,21 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
 
 @external
-def set_allocations_limit(_new_allocations_limit: uint256):
+def set_state(_new_allocations_limit: uint256, _max_unaccounted_periods: uint256, _rewards_rate_per_period: uint256):
     """
-    @notice Changes the allocations limit for Merkle Rewadrds contact. Can only be called by owner.
+    @notice 
+        Sets new allocations limit, rewards rate per period, and number of not accounted periods.
+
+        Reverts if balace of contract is lower then _new_allocations_limit + _max_unaccounted_periods * _rewards_rate_per_period
     """
     assert msg.sender == self.owner, "manager: not permitted"
+    rewarder_balance: uint256 = ERC20(rewards_token).balanceOf(self)
+    required_balance: uint256 = _new_allocations_limit + _max_unaccounted_periods * _rewards_rate_per_period
+    assert rewarder_balance >= required_balance, "manager: reward token balance is low"
+    
     self._set_allocations_limit(_new_allocations_limit)
+    self.max_unaccounted_periods = _max_unaccounted_periods
+    self.rewards_rate_per_period = _rewards_rate_per_period
 
 
 @external 
@@ -235,7 +244,7 @@ def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, 
 def pause():
     """
     @notice
-        Pause allocations increasing and rejects _create_distribution calling
+        Pause allocations increasing and rejects createDistribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
     
@@ -246,15 +255,14 @@ def pause():
 
 
 @external
-def unpause(_start_date: uint256, _new_allocations_limit: uint256):
+def unpause():
     """
     @notice
-        Unpause allocations increasing and allows _create   _distribution calling
+        Unpause allocations increasing and allows createDistribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
-    
-    self._set_allocations_limit(_new_allocations_limit)
-    self.last_accounted_period_start_date = _start_date - period_duration
+
+    self._update_last_accounted_period_start_date()
     self.is_paused = False
 
     log Unpaused(msg.sender)

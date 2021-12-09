@@ -13,7 +13,7 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 `ALLOCATOR` balancer allocator account
 
-`OWNER` address of manager owne
+`OWNER` address of manager owner
 
 ## Balancer side
 
@@ -36,6 +36,18 @@ event RewardsDistributed:
     amount: uint256
 ```
 
+##### `set_allocator(_new_allocator: address)`
+
+Changes `ALLOCATOR`. Can be called by owner or current allocator.
+
+Events:
+
+```vyper=
+event AllocatorChanged:
+    old_allocator: address
+    new_allocator: address
+```
+
 ## Levers
 
 ##### `transfer_ownership(_to: address)`
@@ -53,7 +65,7 @@ event OwnerChanged:
 
 ##### `set_allocator(_new_allocator: address)`
 
-Changes `ALLOCATOR`. Can be called by owner or current allocator only.
+Changes `ALLOCATOR`. Can be called by owner only.
 
 Events:
 
@@ -76,14 +88,16 @@ event RewardsDistributorChanged:
 ```
 
 
-##### `set_allocations_limit(_new_allocations_limit: uint256)`
+##### `set_state(_new_allocations_limit: uint256, _max_unaccounted_periods: uint256, _rewards_rate_per_period: uint256)`
 
-Sets new allocations limit for Reward contract.
+Sets new allocations limit, rewards rate per period, and number of not accounted periods.
+
+Reverts if balace of contract is lower then _new_allocations_limit + _max_unaccounted_periods * _rewards_rate_per_period
 
 
 ##### `pause()`
 
-Stops updating allocations limit and rejects `createDistribution` calls. Can be called by owner only.
+Stops updating allocations limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
 
 Events:
 ```vyper=
@@ -91,10 +105,10 @@ event Paused:
     actor: address
 ```
 
-##### `unpause(_start_date: uint256, _new_allocations_limit: uint256)`
+##### `unpause()`
 
-Resumes updating allocations limit and allows `createDistribution` calls.
-Updates contracts state with new start date and allocations limit. Can be called by owner only.
+Resumes updating allocations limit and allows `create_ldo_distribution` calls.
+Can be called by owner only.
 
 Events:
 ```vyper=

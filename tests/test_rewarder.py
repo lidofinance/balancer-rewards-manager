@@ -55,7 +55,7 @@ def test_set_allocator_by_current_allocator(rewards_contract, ldo_agent, balance
     helpers.assert_single_event_named("AllocatorChanged", tx, {"old_allocator": balancer_allocator, "new_allocator": stranger})
 
 
-def test_set_distributor(rewards_contract, rewards_manager, ldo_agent, balancer_allocator, stranger, helpers):
+def test_set_distributor(rewards_contract, rewards_manager, ldo_agent, stranger, helpers):
     with reverts():
         rewards_contract.set_distributor(stranger, {"from": stranger})
 
@@ -119,7 +119,7 @@ def test_allocations_limit_paused_calculation(
     chain.mine()
     assert rewards_contract.available_allocations() == rewards_limit
 
-    rewards_contract.unpause(program_start_date + 2 * rewards_period, rewards_limit, {"from": ldo_agent})
+    rewards_contract.unpause({"from": ldo_agent})
     chain.sleep(rewards_period)
     chain.mine()
     assert rewards_contract.available_allocations() == 2 * rewards_limit
@@ -162,8 +162,8 @@ def test_pause(
         rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
 
     with reverts():
-        rewards_contract.unpause(program_start_date, 0, {"from": stranger})
-    tx = rewards_contract.unpause(program_start_date, 0, {"from": ldo_agent})
+        rewards_contract.unpause({"from": stranger})
+    tx = rewards_contract.unpause({"from": ldo_agent})
 
     helpers.assert_single_event_named("Unpaused", tx, {"actor": ldo_agent})
     assert rewards_contract.is_paused() == False
@@ -171,7 +171,7 @@ def test_pause(
     rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
 
 
-def test_set_allocations_limit(
+def test_set_state(
     rewards_contract, 
     rewards_manager, 
     dao_treasury, 
@@ -189,11 +189,15 @@ def test_set_allocations_limit(
     chain.mine()
     assert rewards_contract.available_allocations() == rewards_limit
 
-    with reverts():
-        rewards_contract.set_allocations_limit(10, {"from": stranger})
+    with reverts('manager: not permitted'):
+        rewards_contract.set_state(10, 2, amount, {"from": stranger})
+    with reverts('manager: reward token balance is low'):
+        rewards_contract.set_state( 10, 2, amount, {"from": ldo_agent})
 
-    rewards_contract.set_allocations_limit( 10, {"from": ldo_agent})
-    assert rewards_contract.available_allocations() == 10
+    rewards_contract.set_state( 10**18, 2, (amount - 10**18)/2, {"from": ldo_agent})
+    assert rewards_contract.available_allocations() == 10**18
+    assert rewards_contract.max_unaccounted_periods() == 2
+    assert rewards_contract.rewards_rate_per_period() == (amount - 10**18)/2
 
 
 def test_createDistribution(
@@ -204,8 +208,7 @@ def test_createDistribution(
     stranger, 
     ldo_agent,
     helpers,
-    balancer_allocator,
-    program_start_date
+    balancer_allocator
 ):
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     assert ldo_token.balanceOf(rewards_manager) == amount
@@ -217,7 +220,7 @@ def test_createDistribution(
     rewards_contract.pause({"from": ldo_agent})
     with reverts():
         rewards_contract.createDistribution(ldo_token, '', 0,  0, {"from": balancer_allocator})
-    rewards_contract.unpause(program_start_date, 0, {"from": ldo_agent})
+    rewards_contract.unpause({"from": ldo_agent})
 
 
     chain.sleep(rewards_period)
