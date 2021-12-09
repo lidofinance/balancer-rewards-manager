@@ -278,7 +278,7 @@ def set_allocator(_new_allocator: address):
     @notice Changes the allocator. Can only be called by the current owner.
     """
     old_allocator: address = self.allocator
-    assert msg.sender == self.owner, "manager: not permitted"
+    assert msg.sender == self.owner or msg.sender ==  old_allocator, "manager: not permitted"
     self.allocator = _new_allocator
     log AllocatorChanged(old_allocator, _new_allocator)
 

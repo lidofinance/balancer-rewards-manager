@@ -44,6 +44,17 @@ def test_set_allocator(rewards_contract, ldo_agent, balancer_allocator, stranger
     helpers.assert_single_event_named("AllocatorChanged", tx, {"old_allocator": balancer_allocator, "new_allocator": stranger})
 
 
+def test_set_allocator_by_current_allocator(rewards_contract, ldo_agent, balancer_allocator, stranger, helpers):
+    with reverts():
+        rewards_contract.set_allocator(stranger, {"from": stranger})
+
+    assert rewards_contract.allocator() == balancer_allocator
+    tx = rewards_contract.set_allocator(stranger, {"from": balancer_allocator})
+    assert rewards_contract.allocator() == stranger
+
+    helpers.assert_single_event_named("AllocatorChanged", tx, {"old_allocator": balancer_allocator, "new_allocator": stranger})
+
+
 def test_set_distributor(rewards_contract, rewards_manager, ldo_agent, balancer_allocator, stranger, helpers):
     with reverts():
         rewards_contract.set_distributor(stranger, {"from": stranger})

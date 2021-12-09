@@ -53,7 +53,7 @@ event OwnerChanged:
 
 ##### `set_allocator(_new_allocator: address)`
 
-Changes `ALLOCATOR`. Can be called by owner only.
+Changes `ALLOCATOR`. Can be called by owner or current allocator only.
 
 Events:
 
