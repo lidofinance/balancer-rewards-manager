@@ -51,20 +51,21 @@ distributor: public(address)
 rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
-accounted_allocations_limit: public(uint256)
-rewards_rate_per_period: public(uint256)
-period_duration: constant(uint256) = 604800  # 3600 * 24 * 7
-max_unaccounted_periods: public(uint256)
+period_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
+rewards_periods: constant(uint256) = 4          # number of periods in one rewards iteration
+
 last_accounted_period_start_date: public(uint256)
-rewards_periods: constant(uint256) = 4
-amount_to_allocate: public(uint256) 
+max_unaccounted_periods: public(uint256)        # number of periods left for current rewards iteration
+rewards_rate_per_period: public(uint256)
+accounted_allocations_limit: public(uint256)
 is_paused: public(bool)
 
 
 @external
 def __init__(
     _allocator: address,
-    _distributor: address
+    _distributor: address,
+    _start_date: uint256
 ):
     self.owner = msg.sender
     self.allocator = _allocator
@@ -72,6 +73,7 @@ def __init__(
 
     self.accounted_allocations_limit = 0
     self.is_paused = False
+    self.last_accounted_period_start_date = _start_date - period_duration
 
     self.rewards_rate_per_period = 0
 
@@ -79,15 +81,6 @@ def __init__(
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
     log Unpaused(self.owner)
-
-
-@internal
-@view
-def _unaccounted_periods() -> uint256:
-    last_accounted_period_start_date: uint256 = self.last_accounted_period_start_date
-    if (last_accounted_period_start_date > block.timestamp):
-        return 0
-    return (block.timestamp - self.last_accounted_period_start_date) / period_duration
 
 
 @internal
@@ -115,6 +108,15 @@ def is_rewards_period_finished() -> bool:
     @notice Whether the current rewards period has finished.
     """
     return self._is_rewards_period_finished()
+
+
+@internal
+@view
+def _unaccounted_periods() -> uint256:
+    last_accounted_period_start_date: uint256 = self.last_accounted_period_start_date
+    if (last_accounted_period_start_date > block.timestamp):
+        return 0
+    return (block.timestamp - self.last_accounted_period_start_date) / period_duration
 
 
 @internal
@@ -192,13 +194,8 @@ def notifyRewardAmount(amount: uint256, holder: address):
     amount_to_distribute: uint256 = ERC20(rewards_token).balanceOf(self) - self._available_allocations()
     assert amount_to_distribute != 0, "manager: no funds"
 
+    self._update_allocations_limit()    
     self.rewards_rate_per_period = amount_to_distribute / rewards_periods
-    if self.last_accounted_period_start_date == 0:
-        # set first period to Mon Nov 29 2021 00:00:00 GMT+0000
-        # first allocation will be done at Mon Dec 06 2021 00:00:00 GMT+0000
-        self.last_accounted_period_start_date = 1638144000
-    else:
-        self._update_last_accounted_period_start_date()
     self.max_unaccounted_periods = rewards_periods
 
 
@@ -211,39 +208,27 @@ def set_allocations_limit(_new_allocations_limit: uint256):
     self._set_allocations_limit(_new_allocations_limit)
 
 
-@internal
-def _create_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
+@external 
+def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):    
     """
     @notice
         Wraps createDistribution(token: ERC20, merkleRoot: bytes32, amount: uint256, distributionId: uint256)
         of Merkle rewards contract with amount limited by available_allocations()
     """
+    assert msg.sender == self.allocator, "manager: not permitted"
+    assert rewards_token == token, "manager: only LDO distribution allowed"
     assert self.is_paused == False, "manager: contract is paused"
-
     assert ERC20(rewards_token).balanceOf(self) >= _amount, "manager: reward token balance is low"
 
     available_allocations: uint256 = self._available_allocations()
     assert available_allocations >= _amount, "manager: not enought amount approved"
 
     self._set_allocations_limit(available_allocations - _amount)
-    ERC20(rewards_token).approve(rewards_contract, _amount)
 
+    ERC20(rewards_token).approve(rewards_contract, _amount)
     IMerkleRewardsContract(rewards_contract).createDistribution(rewards_token, _merkle_root, _amount, _distribution_id)
 
     log RewardsDistributed(_amount)
-
-
-@external
-def create_ldo_distribution(_merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
-    assert msg.sender == self.allocator, "manager: not permitted"
-    self._create_distribution(_merkle_root, _amount, _distribution_id)
-
-
-@external 
-def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):
-    assert msg.sender == self.allocator, "manager: not permitted"
-    assert rewards_token == token, "manager: only LDO distribution allowed"
-    self._create_distribution(_merkle_root, _amount, _distribution_id)
 
 
 @external

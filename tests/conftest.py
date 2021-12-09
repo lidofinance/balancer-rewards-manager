@@ -73,8 +73,8 @@ def merkle_contract(interface):
 
 
 @pytest.fixture(scope='module')
-def rewarder(deployer, balancer_allocator):
-    return deploy_manager_and_reward_contract(balancer_allocator, {"from": deployer})
+def rewarder(deployer, balancer_allocator, program_start_date):
+    return deploy_manager_and_reward_contract(balancer_allocator, program_start_date, {"from": deployer})
 
 
 @pytest.fixture(scope='module')

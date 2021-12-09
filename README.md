@@ -83,7 +83,7 @@ Sets new allocations limit for Reward contract.
 
 ##### `pause()`
 
-Stops updating allocations limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
+Stops updating allocations limit and rejects `createDistribution` calls. Can be called by owner only.
 
 Events:
 ```vyper=
@@ -93,7 +93,7 @@ event Paused:
 
 ##### `unpause(_start_date: uint256, _new_allocations_limit: uint256)`
 
-Resumes updating allocations limit and allows `create_ldo_distribution` calls.
+Resumes updating allocations limit and allows `createDistribution` calls.
 Updates contracts state with new start date and allocations limit. Can be called by owner only.
 
 Events:

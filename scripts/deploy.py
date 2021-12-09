@@ -18,10 +18,15 @@ def main():
     deployer = get_deployer_account(is_live)
     allocator = get_env('ALLOCATOR')
     owner = get_env('OWNER')
+    start_date = get_env('START_DATE')
 
     print('Deployer:', deployer)
     print('Allocator:', allocator)
     print('Owner:', owner)
+    print(
+        'Program start date:', 
+        time.ctime(int(start_date))
+    )
 
     sys.stdout.write('Proceed? [y/n]: ')
 
@@ -31,6 +36,7 @@ def main():
 
     (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
         allocator,
+        start_date,
         tx_params={"from": deployer, "priority_fee": "4 gwei"}
     )
 
@@ -38,11 +44,12 @@ def main():
     print('Rewards contract: ', rewards_contract)
 
 
-def deploy_manager_and_reward_contract(allocator, tx_params):
+def deploy_manager_and_reward_contract(allocator, start_date, tx_params):
     rewarder_contract = RewardsManager.deploy(tx_params)
     rewards_contract =  BalancerRewardsController.deploy(
         allocator, # _allocator
         rewarder_contract, # distributor
+        start_date,
         tx_params,
         publish_source=False,
     )
