@@ -177,7 +177,8 @@ def test_set_state(
     dao_treasury, 
     ldo_token, 
     stranger, 
-    ldo_agent
+    ldo_agent,
+    program_start_date
     ):
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     assert ldo_token.balanceOf(rewards_manager) == amount
@@ -190,14 +191,21 @@ def test_set_state(
     assert rewards_contract.available_allowance() == rewards_limit
 
     with reverts('manager: not permitted'):
-        rewards_contract.set_state(10, 2, amount, {"from": stranger})
+        rewards_contract.set_state(10, 2, amount, program_start_date, {"from": stranger})
     with reverts('manager: reward token balance is low'):
-        rewards_contract.set_state( 10, 2, amount, {"from": ldo_agent})
+        rewards_contract.set_state( 10, 2, amount, program_start_date, {"from": ldo_agent})
 
-    rewards_contract.set_state( 10**18, 2, (amount - 10**18)/2, {"from": ldo_agent})
+    rewards_contract.set_state(2*10**18, 1, 10**18, 0, {"from": ldo_agent})
+    assert rewards_contract.available_allowance() == 2*10**18
+    assert rewards_contract.max_unaccounted_intervals() == 1
+    assert rewards_contract.rewards_rate_per_interval() == 10**18
+    
+    new_start_date = chain.time() + 100
+    rewards_contract.set_state(10**18, 2, (amount - 10**18)/2, new_start_date, {"from": ldo_agent})
     assert rewards_contract.available_allowance() == 10**18
     assert rewards_contract.max_unaccounted_intervals() == 2
     assert rewards_contract.rewards_rate_per_interval() == (amount - 10**18)/2
+    assert rewards_contract.last_accounted_interval_start_date() == new_start_date - rewards_period
 
 
 def test_createDistribution(
