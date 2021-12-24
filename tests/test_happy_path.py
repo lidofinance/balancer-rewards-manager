@@ -24,17 +24,17 @@ def test_happy_path(
 
     rewards_manager.start_next_rewards_period({"from": stranger})
     
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allowance() == 0
 
     chain.sleep(program_start_date - chain.time() - 1) 
     chain.mine()
 
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allowance() == 0
 
     chain.sleep(2) 
     chain.mine()
 
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allowance() == rewards_limit
 
     with reverts('manager: not enought amount approved'):
         rewards_contract.createDistribution(ldo_token, '', rewards_limit + 1, 0, {"from": balancer_allocator})
@@ -43,40 +43,40 @@ def test_happy_path(
     rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
 
     assert ldo_token.balanceOf(rewards_contract) == amount - rewards_limit
-    assert rewards_contract.available_allocations() == 0
+    assert rewards_contract.available_allowance() == 0
 
     chain.sleep(rewards_period)
     chain.mine()
     
-    assert rewards_contract.available_allocations() == rewards_limit
+    assert rewards_contract.available_allowance() == rewards_limit
 
     chain.sleep(2*rewards_period)
     chain.mine()
 
     assert rewards_manager.is_rewards_period_finished() == True
-    assert rewards_contract.available_allocations() == 3 * rewards_limit
+    assert rewards_contract.available_allowance() == 3 * rewards_limit
 
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     rewards_manager.start_next_rewards_period({"from": stranger})
-    assert rewards_contract.available_allocations() == 3 * rewards_limit
+    assert rewards_contract.available_allowance() == 3 * rewards_limit
 
     chain.sleep(4*rewards_period)
     chain.mine()
 
-    assert rewards_contract.available_allocations() == 7 * rewards_limit
+    assert rewards_contract.available_allowance() == 7 * rewards_limit
 
     assert (chain.time() - program_start_date)
 
     chain.sleep(2*rewards_period)
     chain.mine()
 
-    assert rewards_contract.available_allocations() == 7 * rewards_limit
+    assert rewards_contract.available_allowance() == 7 * rewards_limit
 
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     rewards_manager.start_next_rewards_period({"from": stranger})
 
-    assert rewards_contract.available_allocations() == 7 * rewards_limit
+    assert rewards_contract.available_allowance() == 7 * rewards_limit
 
     chain.sleep(rewards_period)
     chain.mine()
-    assert rewards_contract.available_allocations() == 8 * rewards_limit
+    assert rewards_contract.available_allowance() == 8 * rewards_limit

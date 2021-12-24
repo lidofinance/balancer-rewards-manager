@@ -1,13 +1,11 @@
 # Balancer rewards manager
 
-This repository contains Lido reward manager for [Balancer Merkle Orchard contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol).
-It weekly approves certain amount of LDO to be spendable by Balancer contract. And provides interface to general rewards manager.
-
-# Rewards Manager
-
-The reward manager contract should be set as `owner` of the Balancer Merkle contract.
+This repository contains Lido rewards controller for [Balancer Merkle Orchard contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol) and manager for simplifying managing it via DAO voting.
+Rewarder weekly approves certain amount of LDO to be spendable by Balancer contract. And provides interface to general rewards manager.
 
 ## Deploying Environment
+
+`deploy.py` script that deploys `BalancerRewardsController` and `RewardsManager` contracts. The script next ENV variables be set.
 
 `DEPLOYER` deployer account
 
@@ -15,19 +13,25 @@ The reward manager contract should be set as `owner` of the Balancer Merkle cont
 
 `OWNER` address of manager owner
 
-## Balancer side
+## BalancerRewardsController.vy
+### Balancer side
 
-##### `view available_allocations() -> uint256`
+##### `view available_allowance() -> uint256`
 
-Returns current allowance of Reward contract.
+Returns current allowance limit available for distribution by calling `createDistribution`
 
 ##### `createDistribution(_token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
 
 Wrapper for `createDistribution` of MerkleOrchard contract.
-Can be called by allocator address only.
 
-Reverts if `_amount` is greater than Manager balance or allocations limit.
+Wrapper for `createDistribution(token: ERC20, merkleRoot: bytes32, amount: uint256, distributionId: uint256)`
+of Merkle Orchard contract and allowes to distibute LDO token holded by this contract
+with amount limited by available_allowance()
+
+Reverts if `_amount` is greater than Manager balance or allowance limit.
 Reverts if `_token` is not LDO.
+Reverts if contract is paused.
+Reverts if contract has not enough balance to distribute `_amount` of LDO
 
 Events:
 
@@ -44,7 +48,7 @@ Events:
 
 ```vyper=
 event AllocatorChanged:
-    old_allocator: address
+    previous_distributor: address
     new_allocator: address
 ```
 
@@ -58,20 +62,20 @@ Events:
 
 ```vyper=
 event OwnerChanged:
-    old_owner: address
+    previous_owner: address
     new_owner: address
 ```
 
 
 ##### `set_allocator(_new_allocator: address)`
 
-Changes `ALLOCATOR`. Can be called by owner only.
+Changes `ALLOCATOR`. Can be called by owner or current allocator.
 
 Events:
 
 ```vyper=
 event AllocatorChanged:
-    old_allocator: address
+    previous_distributor: address
     new_allocator: address
 ```
 
@@ -83,21 +87,21 @@ Events:
 
 ```vyper=
 event RewardsDistributorChanged:
-    old_distributor: address
+    previous_distributor: address
     new_distributor: address
 ```
 
 
-##### `set_state(_new_allocations_limit: uint256, _max_unaccounted_periods: uint256, _rewards_rate_per_period: uint256)`
+##### `set_state(_allowance: uint256, _max_unaccounted_intervals: uint256, _rewards_rate_per_interval: uint256,  _new_start_date: uint256: uint256)`
 
-Sets new allocations limit, rewards rate per period, and number of not accounted periods.
+Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
 
-Reverts if balace of contract is lower then _new_allocations_limit + _max_unaccounted_periods * _rewards_rate_per_period
+Reverts if balace of contract is lower then _new_allowance + _max_unaccounted_intervals * _rewards_rate_per_interval
 
 
 ##### `pause()`
 
-Stops updating allocations limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
+Stops updating allowance limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
 
 Events:
 ```vyper=
@@ -107,7 +111,7 @@ event Paused:
 
 ##### `unpause()`
 
-Resumes updating allocations limit and allows `create_ldo_distribution` calls.
+Resumes updating allowance limit and allows `create_ldo_distribution` calls.
 Can be called by owner only.
 
 Events:
