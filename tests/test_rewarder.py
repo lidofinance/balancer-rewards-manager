@@ -276,3 +276,25 @@ def test_recover_erc20_empty_balance(
         rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": stranger})
     with reverts('manager: token transfer failed'):
         rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": ldo_agent})
+
+
+def test_notify_rewards_amount_reverts_zero_amount(
+    rewards_contract, 
+    rewards_manager,
+    dao_treasury,
+    ldo_token
+):
+    ldo_token.transfer(rewards_manager, 100, {"from": dao_treasury})
+    ldo_token.approve(rewards_contract, 100, {"from": rewards_manager})
+    with reverts('manager: no funds'):
+        rewards_contract.notifyRewardAmount(0, rewards_manager, {"from": rewards_manager})
+
+
+def test_allowance_before_start_date(
+    rewards_contract, 
+    rewards_manager,
+    ldo_agent
+):
+    new_start_date = chain.time() + rewards_period + 1000
+    rewards_contract.set_state(0, 0, 0, new_start_date, {"from": ldo_agent})
+    assert rewards_contract.available_allowance() == 0
