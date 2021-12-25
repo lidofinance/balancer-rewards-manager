@@ -36,9 +36,20 @@ event ERC20TokenRecovered:
     recipient: indexed(address)
 
 
-event AcountedAllowanceUpdated:
+event AccountedAllowanceUpdated:
     new_allowance: uint256
-    last_accounted_interval_start_date: uint256
+
+
+event AccountedIntervalStartDateUpdated:
+    accounted_interval_start_date: uint256
+
+
+event RemainigIntervalsUpdated:
+    remining_intervals: uint256
+
+
+event RewadrdsRateUpdated:
+    rewards_rate_per_interval: uint256
 
 
 event PeriodStarted:
@@ -65,10 +76,10 @@ rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 interval_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
 rewards_iterations: constant(uint256) = 4          # number of iteration in one rewards period
 
-last_accounted_interval_start_date: public(uint256)
+accounted_interval_start_date: public(uint256)
 accounted_allowance: public(uint256)
 
-max_unaccounted_intervals: public(uint256)        # number of iteration left for current rewards period
+remining_intervals: public(uint256)        # number of iteration left for current rewards period
 rewards_rate_per_interval: public(uint256)
 
 is_paused: public(bool)
@@ -84,8 +95,8 @@ def __init__(
     self.allocator = _allocator
     self.distributor = _distributor
 
-    self.accounted_allowance = 0    # allowance at last_accounted_interval_start_date
-    self.last_accounted_interval_start_date = _start_date - interval_duration
+    self.accounted_allowance = 0    # allowance at accounted_interval_start_date
+    self.accounted_interval_start_date = _start_date - interval_duration
 
     self.is_paused = False
 
@@ -95,13 +106,15 @@ def __init__(
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
     log Unpaused(self.owner)
-    log AcountedAllowanceUpdated(self.accounted_allowance, self.last_accounted_interval_start_date)
+    log AccountedAllowanceUpdated(self.accounted_allowance)
+    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
+    log RemainigIntervalsUpdated(0)
 
 
 @internal
 @view
 def _period_finish() -> uint256:
-    return self.last_accounted_interval_start_date + self.max_unaccounted_intervals * interval_duration
+    return self.accounted_interval_start_date + self.remining_intervals * interval_duration
 
 
 @internal
@@ -125,7 +138,7 @@ def _available_allowance() -> uint256:
     if self.is_paused == True:
         return self.accounted_allowance
     
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.max_unaccounted_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remining_intervals)
     
     return self.accounted_allowance + unaccounted_periods * self.rewards_rate_per_interval
 
@@ -141,10 +154,17 @@ def _update_accounted_and_remainig_intervals():
     if (unaccounted_periods == 0):
         return
 
-    self.last_accounted_interval_start_date = self.last_accounted_interval_start_date \
+    accounted_interval_start_date: uint256 = self.accounted_interval_start_date \
         + interval_duration * unaccounted_periods
+
+    self.accounted_interval_start_date = accounted_interval_start_date
+
+    remaining_intervals: uint256 = self.remining_intervals - min(self.remining_intervals, unaccounted_periods)
     
-    self.max_unaccounted_intervals = self.max_unaccounted_intervals - min(self.max_unaccounted_intervals, unaccounted_periods)
+    self.remining_intervals = remaining_intervals
+
+    log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
+    log RemainigIntervalsUpdated(remaining_intervals)
 
 
 @internal
@@ -155,9 +175,10 @@ def _set_allowance(_new_allowance: uint256):
     self.accounted_allowance = _new_allowance
 
     # Reseting unaccounted period date
-    self._update_last_accounted_interval_start_date()
+    self._update_accounted_and_remainig_intervals()
 
-    log AcountedAllowanceUpdated(_new_allowance, self.last_accounted_interval_start_date)
+    log AccountedAllowanceUpdated(_new_allowance)
+    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
 
 
 @internal
@@ -170,24 +191,33 @@ def _update_allowance():
 
 
 @external
-def set_state(_new_allowance: uint256, _max_unaccounted_intervals: uint256, _rewards_rate_per_interval: uint256, _new_start_date: uint256):
+def set_state(_new_allowance: uint256, _remining_intervals: uint256, _rewards_rate_per_interval: uint256, _new_start_date: uint256):
     """
     @notice 
         Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
 
-        Reverts if balace of contract is lower then _new_allowance + _max_unaccounted_intervals * _rewards_rate_per_interval
+        Reverts if balace of contract is lower then _new_allowance + _remining_intervals * _rewards_rate_per_interval
     """
     assert msg.sender == self.owner, "manager: not permitted"
     rewarder_balance: uint256 = ERC20(rewards_token).balanceOf(self)
-    required_balance: uint256 = _new_allowance + _max_unaccounted_intervals * _rewards_rate_per_interval
+    required_balance: uint256 = _new_allowance + _remining_intervals * _rewards_rate_per_interval
     assert rewarder_balance >= required_balance, "manager: reward token balance is low"
     if (_new_start_date == 0):
         self._set_allowance(_new_allowance)
     else:
-        self.last_accounted_interval_start_date = _new_start_date - interval_duration
+        accounted_interval_start_date: uint256 = _new_start_date - interval_duration
+        self.accounted_interval_start_date = accounted_interval_start_date
         self.accounted_allowance = _new_allowance
-    self.max_unaccounted_intervals = _max_unaccounted_intervals
+
+        log AccountedAllowanceUpdated(_new_allowance)
+        log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
+
+    self.remining_intervals = _remining_intervals
     self.rewards_rate_per_interval = _rewards_rate_per_interval
+
+    log RemainigIntervalsUpdated(_remining_intervals)
+    log RewadrdsRateUpdated(_rewards_rate_per_interval)
+
 
 
 @external
@@ -205,16 +235,16 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
     self._update_allowance()
 
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.max_unaccounted_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remining_intervals)
     
     amount_to_distribute: uint256 = unaccounted_periods * self.rewards_rate_per_interval + amount 
     assert amount_to_distribute != 0, "manager: no funds"
   
     rate: uint256 = amount_to_distribute / rewards_iterations
     self.rewards_rate_per_interval = rate
-    self.max_unaccounted_intervals = rewards_iterations
+    self.remining_intervals = rewards_iterations
 
-    log PeriodStarted(rewards_iterations, self.last_accounted_interval_start_date, rate)
+    log PeriodStarted(rewards_iterations, self.accounted_interval_start_date, rate)
 
 
 
@@ -268,11 +298,12 @@ def unpause():
     assert msg.sender == self.owner, "manager: not permitted"
     assert self.is_paused, "manager: contract not paused"
 
-    self._update_last_accounted_interval_start_date()
+    self._update_accounted_and_remainig_intervals()
     self.is_paused = False
 
     log Unpaused(msg.sender)
-    log AcountedAllowanceUpdated(self.accounted_allowance, self.last_accounted_interval_start_date)
+    log AccountedAllowanceUpdated(self.accounted_allowance)
+    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
 
 
 @external
@@ -296,7 +327,7 @@ def set_allocator(_new_allocator: address):
     assert msg.sender == self.owner or msg.sender ==  previous_allocator, "manager: not permitted"
     assert _new_allocator != ZERO_ADDRESS, "manager: zero address not allowed"
     self.allocator = _new_allocator
-    log AllocatorChanged(previous_distributor, _new_allocator)
+    log AllocatorChanged(previous_allocator, _new_allocator)
 
 
 @external
@@ -305,6 +336,7 @@ def set_distributor(_new_distributor: address):
     @notice Changes the distributor. Can only be called by the current owner.
     """
     assert msg.sender == self.owner, "manager: not permitted"
+    assert _new_distributor != ZERO_ADDRESS, "manager: zero address not allowed"
     previous_distributor: address = self.distributor
     self.distributor = _new_distributor
     log RewardsDistributorChanged(previous_distributor, _new_distributor)

@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, chain
+from brownie import reverts, chain, ZERO_ADDRESS
 from math import floor
 from utils.config import steth_token_address
 
@@ -12,7 +12,7 @@ def test_init(ldo_agent, balancer_allocator, rewards_contract, program_start_dat
     assert rewards_contract.allocator() == balancer_allocator
     assert rewards_contract.rewards_rate_per_interval() == 0
     assert rewards_contract.accounted_allowance() == 0
-    assert rewards_contract.last_accounted_interval_start_date() == program_start_date - rewards_period
+    assert rewards_contract.accounted_interval_start_date() == program_start_date - rewards_period
 
 
 def test_transfer_ownership(
@@ -37,6 +37,10 @@ def test_set_allocator(rewards_contract, ldo_agent, balancer_allocator, stranger
         rewards_contract.set_allocator(stranger, {"from": stranger})
 
     assert rewards_contract.allocator() == balancer_allocator
+
+    with reverts():
+        rewards_contract.set_allocator(ZERO_ADDRESS, {"from": ldo_agent})
+
     tx = rewards_contract.set_allocator(stranger, {"from": ldo_agent})
     assert rewards_contract.allocator() == stranger
 
@@ -202,15 +206,15 @@ def test_set_state(
 
     rewards_contract.set_state(2*10**18, 1, 10**18, 0, {"from": ldo_agent})
     assert rewards_contract.available_allowance() == 2*10**18
-    assert rewards_contract.max_unaccounted_intervals() == 1
+    assert rewards_contract.remining_intervals() == 1
     assert rewards_contract.rewards_rate_per_interval() == 10**18
     
     new_start_date = chain.time() + 100
     rewards_contract.set_state(10**18, 2, (amount - 10**18)/2, new_start_date, {"from": ldo_agent})
     assert rewards_contract.available_allowance() == 10**18
-    assert rewards_contract.max_unaccounted_intervals() == 2
+    assert rewards_contract.remining_intervals() == 2
     assert rewards_contract.rewards_rate_per_interval() == (amount - 10**18)/2
-    assert rewards_contract.last_accounted_interval_start_date() == new_start_date - rewards_period
+    assert rewards_contract.accounted_interval_start_date() == new_start_date - rewards_period
 
 
 def test_createDistribution(

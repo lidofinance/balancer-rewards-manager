@@ -48,7 +48,7 @@ Events:
 
 ```vyper=
 event AllocatorChanged:
-    previous_distributor: address
+    previous_allocator: address
     new_allocator: address
 ```
 
@@ -75,7 +75,7 @@ Events:
 
 ```vyper=
 event AllocatorChanged:
-    previous_distributor: address
+    previous_allocator: address
     new_allocator: address
 ```
 
@@ -92,11 +92,11 @@ event RewardsDistributorChanged:
 ```
 
 
-##### `set_state(_allowance: uint256, _max_unaccounted_intervals: uint256, _rewards_rate_per_interval: uint256,  _new_start_date: uint256: uint256)`
+##### `set_state(_allowance: uint256, _remining_intervals: uint256, _rewards_rate_per_interval: uint256,  _new_start_date: uint256: uint256)`
 
 Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
 
-Reverts if balace of contract is lower then _new_allowance + _max_unaccounted_intervals * _rewards_rate_per_interval
+Reverts if balace of contract is lower then _new_allowance + _remining_intervals * _rewards_rate_per_interval
 
 
 ##### `pause()`
