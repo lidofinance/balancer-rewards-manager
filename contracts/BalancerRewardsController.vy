@@ -281,7 +281,7 @@ def transfer_ownership(_to: address):
     """
     previous_owner: address = self.owner
     assert msg.sender == previous_owner, "manager: not permitted"
-    assert _to != ZERO_ADDRESS
+    assert _to != ZERO_ADDRESS, "manager: zero address not allowed"
     self.owner = _to
     log OwnerChanged(previous_owner, _to)
 
@@ -291,8 +291,9 @@ def set_allocator(_new_allocator: address):
     """
     @notice Changes the allocator. Can only be called by the current owner or current allocator.
     """
-    previous_distributor: address = self.allocator
-    assert msg.sender == self.owner or msg.sender ==  previous_distributor, "manager: not permitted"
+    previous_allocator: address = self.allocator
+    assert msg.sender == self.owner or msg.sender ==  previous_allocator, "manager: not permitted"
+    assert _new_allocator != ZERO_ADDRESS, "manager: zero address not allowed"
     self.allocator = _new_allocator
     log AllocatorChanged(previous_distributor, _new_allocator)
 
