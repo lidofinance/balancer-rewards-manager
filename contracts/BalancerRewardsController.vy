@@ -113,10 +113,10 @@ def _is_rewards_period_finished() -> bool:
 @internal
 @view
 def _unaccounted_periods() -> uint256:
-    last_accounted_interval_start_date: uint256 = self.last_accounted_interval_start_date
-    if (last_accounted_interval_start_date > block.timestamp):
+    accounted_interval_start_date: uint256 = self.accounted_interval_start_date
+    if (accounted_interval_start_date > block.timestamp):
         return 0
-    return (block.timestamp - self.last_accounted_interval_start_date) / interval_duration
+    return (block.timestamp - accounted_interval_start_date) / interval_duration
 
 
 @internal
@@ -131,10 +131,11 @@ def _available_allowance() -> uint256:
 
 
 @internal
-def _update_last_accounted_interval_start_date():
+def _update_accounted_and_remainig_intervals():
     """
     @notice 
-        Updates last_accounted_interval_start_date to timestamp of current period
+        Updates accounted_interval_start_date to timestamp of current period
+        and decreases remining_intervals by number of intervals passed
     """
     unaccounted_periods: uint256 = self._unaccounted_periods()
     if (unaccounted_periods == 0):
