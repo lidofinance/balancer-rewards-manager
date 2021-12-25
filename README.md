@@ -103,6 +103,8 @@ Reverts if balace of contract is lower then _new_allowance + _max_unaccounted_in
 
 Stops updating allowance limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
 
+Reverts if contract is paused.
+
 Events:
 ```vyper=
 event Paused:
@@ -113,6 +115,8 @@ event Paused:
 
 Resumes updating allowance limit and allows `create_ldo_distribution` calls.
 Can be called by owner only.
+
+Reverts if contract is not paused.
 
 Events:
 ```vyper=

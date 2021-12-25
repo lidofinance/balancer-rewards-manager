@@ -151,13 +151,19 @@ def test_pause(
     assert rewards_contract.available_allowance() == rewards_limit
 
     with reverts():
+        rewards_contract.unpause({"from": ldo_agent})
+
+    with reverts():
         rewards_contract.pause({"from": stranger})
     tx = rewards_contract.pause({"from": ldo_agent})
     
     helpers.assert_single_event_named("Paused", tx, {"actor": ldo_agent})
     assert rewards_contract.is_paused() == True
     assert rewards_contract.available_allowance() == rewards_limit
-    
+
+    with reverts():
+        rewards_contract.pause({"from": ldo_agent})
+
     with reverts('manager: contract is paused'):
         rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_allocator})
 

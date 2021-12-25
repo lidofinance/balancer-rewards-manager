@@ -250,6 +250,7 @@ def pause():
         Pause allowance increasing and rejects createDistribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
+    assert not self.is_paused, "manager: contract already paused"
     
     self._update_allowance()
     self.is_paused = True
@@ -264,6 +265,7 @@ def unpause():
         Unpause allowance increasing and allows createDistribution calling
     """
     assert msg.sender == self.owner, "manager: not permitted"
+    assert self.is_paused, "manager: contract not paused"
 
     self._update_last_accounted_interval_start_date()
     self.is_paused = False
