@@ -6,7 +6,6 @@ from utils.config import steth_token_address
 rewards_limit = 75 * 1000 * 10**18
 rewards_period = 3600 * 24 * 7
 amount = 300_000 * 10**18
-start_date = 1638748800 #  Monday, 6 December 2021, 0:00:00
 
 def test_init(ldo_agent, balancer_allocator, rewards_contract, program_start_date):
     assert rewards_contract.owner() == ldo_agent
@@ -252,17 +251,17 @@ def test_createDistribution(
     assert ldo_token.balanceOf(rewards_contract) == 3*rewards_limit
 
 
-def test_recover_erc20(rewarder, ldo_agent, ldo_token, stranger, helpers, dao_treasury):
-    ldo_token.transfer(rewarder[1], 100, {"from": dao_treasury})
-    assert ldo_token.balanceOf(rewarder[1]) == 100
+def test_recover_erc20(rewards_contract, ldo_agent, ldo_token, stranger, helpers, dao_treasury):
+    ldo_token.transfer(rewards_contract, 100, {"from": dao_treasury})
+    assert ldo_token.balanceOf(rewards_contract) == 100
 
     with reverts('manager: not permitted'):
-        rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": stranger})
+        rewards_contract.recover_erc20(ldo_token, 100, ldo_agent, {"from": stranger})
 
     balance = ldo_token.balanceOf(ldo_agent)
 
-    tx = rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": ldo_agent})
-    assert ldo_token.balanceOf(rewarder[1]) == 0
+    tx = rewards_contract.recover_erc20(ldo_token, 100, ldo_agent, {"from": ldo_agent})
+    assert ldo_token.balanceOf(rewards_contract) == 0
     assert ldo_token.balanceOf(ldo_agent) == balance + 100
     helpers.assert_single_event_named(
         "ERC20TokenRecovered", 
@@ -271,17 +270,17 @@ def test_recover_erc20(rewarder, ldo_agent, ldo_token, stranger, helpers, dao_tr
     )
 
 def test_recover_erc20_empty_balance(
-    rewarder, 
+    rewards_contract, 
     ldo_agent, 
     ldo_token, 
     stranger
 ):
-    assert ldo_token.balanceOf(rewarder[1]) == 0
+    assert ldo_token.balanceOf(rewards_contract) == 0
 
     with reverts('manager: not permitted'):
-        rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": stranger})
+        rewards_contract.recover_erc20(ldo_token, 100, ldo_agent, {"from": stranger})
     with reverts('manager: token transfer failed'):
-        rewarder[1].recover_erc20(ldo_token, 100, ldo_agent, {"from": ldo_agent})
+        rewards_contract.recover_erc20(ldo_token, 100, ldo_agent, {"from": ldo_agent})
 
 
 def test_notify_rewards_amount_reverts_zero_amount(

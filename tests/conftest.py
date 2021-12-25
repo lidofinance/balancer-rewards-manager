@@ -23,7 +23,7 @@ def deployer(accounts):
 
 @pytest.fixture(scope='module')
 def ape(accounts):
-    return accounts[0]
+    return accounts[1]
 
 
 @pytest.fixture(scope='module')
