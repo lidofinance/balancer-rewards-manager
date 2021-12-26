@@ -44,11 +44,11 @@ event AccountedIntervalStartDateUpdated:
     accounted_interval_start_date: uint256
 
 
-event RemainigIntervalsUpdated:
-    remining_intervals: uint256
+event RemainingIntervalsUpdated:
+    remaining_intervals: uint256
 
 
-event RewadrdsRateUpdated:
+event RewardsRateUpdated:
     rewards_rate_per_interval: uint256
 
 
@@ -74,12 +74,12 @@ rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
 interval_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
-rewards_iterations: constant(uint256) = 4          # number of iteration in one rewards period
+rewards_iterations: constant(uint256) = 4          # number of iterations in one rewards period
 
 accounted_interval_start_date: public(uint256)
 accounted_allowance: public(uint256)
 
-remining_intervals: public(uint256)        # number of iteration left for current rewards period
+remaining_intervals: public(uint256)        # number of iterations left for current rewards period
 rewards_rate_per_interval: public(uint256)
 
 is_paused: public(bool)
@@ -108,13 +108,13 @@ def __init__(
     log Unpaused(self.owner)
     log AccountedAllowanceUpdated(self.accounted_allowance)
     log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
-    log RemainigIntervalsUpdated(0)
+    log RemainingIntervalsUpdated(0)
 
 
 @internal
 @view
 def _period_finish() -> uint256:
-    return self.accounted_interval_start_date + self.remining_intervals * interval_duration
+    return self.accounted_interval_start_date + self.remaining_intervals * interval_duration
 
 
 @internal
@@ -138,17 +138,17 @@ def _available_allowance() -> uint256:
     if self.is_paused == True:
         return self.accounted_allowance
     
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remining_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remaining_intervals)
     
     return self.accounted_allowance + unaccounted_periods * self.rewards_rate_per_interval
 
 
 @internal
-def _update_accounted_and_remainig_intervals():
+def _update_accounted_and_remaining_intervals():
     """
     @notice 
         Updates accounted_interval_start_date to timestamp of current period
-        and decreases remining_intervals by number of intervals passed
+        and decreases remaining_intervals by number of intervals passed
     """
     unaccounted_periods: uint256 = self._unaccounted_periods()
     if (unaccounted_periods == 0):
@@ -159,12 +159,12 @@ def _update_accounted_and_remainig_intervals():
 
     self.accounted_interval_start_date = accounted_interval_start_date
 
-    remaining_intervals: uint256 = self.remining_intervals - min(self.remining_intervals, unaccounted_periods)
+    remaining_intervals: uint256 = self.remaining_intervals - min(self.remaining_intervals, unaccounted_periods)
     
-    self.remining_intervals = remaining_intervals
+    self.remaining_intervals = remaining_intervals
 
     log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
-    log RemainigIntervalsUpdated(remaining_intervals)
+    log RemainingIntervalsUpdated(remaining_intervals)
 
 
 @internal
@@ -174,8 +174,8 @@ def _set_allowance(_new_allowance: uint256):
     """
     self.accounted_allowance = _new_allowance
 
-    # Reseting unaccounted period date
-    self._update_accounted_and_remainig_intervals()
+    # Resetting unaccounted period date
+    self._update_accounted_and_remaining_intervals()
 
     log AccountedAllowanceUpdated(_new_allowance)
     log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
@@ -191,16 +191,16 @@ def _update_allowance():
 
 
 @external
-def set_state(_new_allowance: uint256, _remining_intervals: uint256, _rewards_rate_per_interval: uint256, _new_start_date: uint256):
+def set_state(_new_allowance: uint256, _remaining_intervals: uint256, _rewards_rate_per_interval: uint256, _new_start_date: uint256):
     """
     @notice 
         Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
 
-        Reverts if balace of contract is lower then _new_allowance + _remining_intervals * _rewards_rate_per_interval
+        Reverts if balace of contract is lower then _new_allowance + _remaining_intervals * _rewards_rate_per_interval
     """
     assert msg.sender == self.owner, "manager: not permitted"
     rewarder_balance: uint256 = ERC20(rewards_token).balanceOf(self)
-    required_balance: uint256 = _new_allowance + _remining_intervals * _rewards_rate_per_interval
+    required_balance: uint256 = _new_allowance + _remaining_intervals * _rewards_rate_per_interval
     assert rewarder_balance >= required_balance, "manager: reward token balance is low"
     if (_new_start_date == 0):
         self._set_allowance(_new_allowance)
@@ -212,11 +212,11 @@ def set_state(_new_allowance: uint256, _remining_intervals: uint256, _rewards_ra
         log AccountedAllowanceUpdated(_new_allowance)
         log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
 
-    self.remining_intervals = _remining_intervals
+    self.remaining_intervals = _remaining_intervals
     self.rewards_rate_per_interval = _rewards_rate_per_interval
 
-    log RemainigIntervalsUpdated(_remining_intervals)
-    log RewadrdsRateUpdated(_rewards_rate_per_interval)
+    log RemainingIntervalsUpdated(_remaining_intervals)
+    log RewardsRateUpdated(_rewards_rate_per_interval)
 
 
 
@@ -235,14 +235,14 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
     self._update_allowance()
 
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remining_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remaining_intervals)
     
     amount_to_distribute: uint256 = unaccounted_periods * self.rewards_rate_per_interval + amount 
     assert amount_to_distribute != 0, "manager: no funds"
   
     rate: uint256 = amount_to_distribute / rewards_iterations
     self.rewards_rate_per_interval = rate
-    self.remining_intervals = rewards_iterations
+    self.remaining_intervals = rewards_iterations
 
     log PeriodStarted(rewards_iterations, self.accounted_interval_start_date, rate)
 
@@ -298,7 +298,7 @@ def unpause():
     assert msg.sender == self.owner, "manager: not permitted"
     assert self.is_paused, "manager: contract not paused"
 
-    self._update_accounted_and_remainig_intervals()
+    self._update_accounted_and_remaining_intervals()
     self.is_paused = False
 
     log Unpaused(msg.sender)
