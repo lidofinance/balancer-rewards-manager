@@ -36,10 +36,10 @@ def test_happy_path(
 
     assert rewards_contract.available_allowance() == rewards_limit
 
-    with reverts('manager: not enought amount approved'):
+    with reverts('manager: not enough amount approved'):
         rewards_contract.createDistribution(ldo_token, '', rewards_limit + 1, 0, {"from": balancer_allocator})
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.createDistribution(steth_token_address, '', rewards_limit + 1, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_allocator})
     rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
 
     assert ldo_token.balanceOf(rewards_contract) == amount - rewards_limit
@@ -64,8 +64,6 @@ def test_happy_path(
     chain.mine()
 
     assert rewards_contract.available_allowance() == 7 * rewards_limit
-
-    assert (chain.time() - program_start_date)
 
     chain.sleep(2*rewards_period)
     chain.mine()

@@ -3,6 +3,7 @@ from brownie import chain, reverts, Wei, ZERO_ADDRESS
 from brownie.network.state import Chain
 
 rewards_period = 3600 * 24 * 7
+random_address = "0xb842afd82d940ff5d8f6ef3399572592ebf182b0"
 
 
 def test_owner_is_deployer(rewards_manager, ldo_agent):
@@ -31,9 +32,9 @@ def test_stranger_can_not_set_rewards_contract(rewards_manager, stranger):
 
 
 def test_owner_can_set_rewards_contract(rewards_manager, ldo_agent):
-    assert rewards_manager.rewards_contract != ZERO_ADDRESS
-    rewards_manager.set_rewards_contract(ZERO_ADDRESS, {"from": ldo_agent})
-    assert rewards_manager.rewards_contract() == ZERO_ADDRESS
+    assert rewards_manager.rewards_contract != random_address
+    rewards_manager.set_rewards_contract(random_address, {"from": ldo_agent})
+    assert rewards_manager.rewards_contract() == random_address
 
 
 def test_owner_can_set_rewards_contract_to_zero_address(rewards_manager, ldo_agent):

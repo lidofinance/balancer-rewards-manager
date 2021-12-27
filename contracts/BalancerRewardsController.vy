@@ -114,6 +114,9 @@ def __init__(
 @internal
 @view
 def _period_finish() -> uint256:
+    """
+    @notice Date of last allowance increasing.
+    """
     return self.accounted_interval_start_date + self.remaining_intervals * interval_duration
 
 
@@ -170,7 +173,7 @@ def _update_accounted_and_remaining_intervals():
 @internal
 def _set_allowance(_new_allowance: uint256):
     """
-    @notice Changes the allowance limit for Merkle Rewadrds contact. 
+    @notice Changes the allowance limit for Merkle Rewards contact. 
     """
     self.accounted_allowance = _new_allowance
 
@@ -264,7 +267,7 @@ def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, 
     assert ERC20(rewards_token).balanceOf(self) >= _amount, "manager: reward token balance is low"
 
     available_allowance: uint256 = self._available_allowance()
-    assert available_allowance >= _amount, "manager: not enought amount approved"
+    assert available_allowance >= _amount, "manager: not enough amount approved"
 
     self._set_allowance(available_allowance - _amount)
 
