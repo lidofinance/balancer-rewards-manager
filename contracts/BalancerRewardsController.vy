@@ -188,15 +188,6 @@ def _set_allowance(_new_allowance: uint256):
     log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
 
 
-@internal
-def _update_allowance():
-    """
-    @notice Updates allowance based on current calculated allowance limit
-    """
-    new_allowance: uint256 = self._available_allowance()
-    self._set_allowance(new_allowance)
-
-
 @external
 def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256, _new_start_date: uint256):
     """
@@ -230,7 +221,8 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
     assert ERC20(rewards_token).transferFrom(holder, self, amount), "manager: transfer failed"
 
-    self._update_allowance()
+    new_allowance: uint256 = self._available_allowance()
+    self._set_allowance(new_allowance)
 
     unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remaining_intervals)
     
@@ -279,8 +271,10 @@ def pause():
     """
     assert msg.sender == self.owner, "manager: not permitted"
     assert not self.is_paused, "manager: contract already paused"
+
+    new_allowance: uint256 = self._available_allowance()
+    self._set_allowance(new_allowance)
     
-    self._update_allowance()
     self.is_paused = True
 
     log Paused(msg.sender)
