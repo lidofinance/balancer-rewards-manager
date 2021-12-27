@@ -144,8 +144,6 @@ def test_pause(
     chain.sleep(rewards_period)
     chain.mine()
 
-    with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.createDistribution(steth_token_address, '', 0, 0, {"from": balancer_allocator})
     rewards_contract.createDistribution(ldo_token, '', 0, 0, {"from": balancer_allocator})
 
     assert rewards_contract.available_allowance() == rewards_limit
@@ -322,6 +320,8 @@ def test_createDistribution_passes_right_data(
     rewards_manager.start_next_rewards_period({"from": stranger})
 
     chain.sleep(program_start_date - chain.time() + 1)
+    chain.mine()
+    
     assert rewards_contract.available_allowance() == rewards_limit 
 
     rewards_contract.createDistribution(
