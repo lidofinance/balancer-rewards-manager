@@ -162,12 +162,16 @@ def _update_accounted_and_remaining_intervals():
 
     self.accounted_interval_start_date = accounted_interval_start_date
 
-    remaining_intervals: uint256 = self.remaining_intervals - min(self.remaining_intervals, unaccounted_periods)
+    self.accounted_iteration_start_date = accounted_iteration_start_date
     
-    self.remaining_intervals = remaining_intervals
+    remaining_iterations: uint256 = 0
+    if (unaccounted_periods < self.remaining_iterations): 
+        remaining_iterations = self.remaining_iterations - unaccounted_periods
 
-    log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
-    log RemainingIntervalsUpdated(remaining_intervals)
+    self.remaining_iterations = remaining_iterations
+    
+    log AccountedIterationStartDateUpdated(accounted_iteration_start_date)
+    log RemainingIterationsUpdated(remaining_iterations)
 
 
 @internal
