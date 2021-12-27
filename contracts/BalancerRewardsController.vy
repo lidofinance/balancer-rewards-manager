@@ -144,30 +144,30 @@ def _available_allowance() -> uint256:
     if self.is_paused == True:
         return self.accounted_allowance
     
-    unaccounted_periods: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
+    unaccounted_iterations: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
     
-    return self.accounted_allowance + unaccounted_periods * self.rewards_rate_per_iteration
+    return self.accounted_allowance + unaccounted_iterations * self.rewards_rate_per_iteration
 
 
 @internal
 def _update_accounted_and_remaining_iterations():
     """
     @notice 
-        Updates accounted_iteration_start_date to timestamp of current period
+        Updates accounted_iteration_start_date to timestamp of current iteration
         and decreases remaining_iterations by number of iterations passed
     """
-    unaccounted_periods: uint256 = self._unaccounted_iterations()
-    if (unaccounted_periods == 0):
+    unaccounted_iterations: uint256 = self._unaccounted_iterations()
+    if (unaccounted_iterations == 0):
         return
 
     accounted_iteration_start_date: uint256 = self.accounted_iteration_start_date \
-        + iteration_duration * unaccounted_periods
+        + iteration_duration * unaccounted_iterations
 
     self.accounted_iteration_start_date = accounted_iteration_start_date
     
     remaining_iterations: uint256 = 0
-    if (unaccounted_periods < self.remaining_iterations): 
-        remaining_iterations = self.remaining_iterations - unaccounted_periods
+    if (unaccounted_iterations < self.remaining_iterations): 
+        remaining_iterations = self.remaining_iterations - unaccounted_iterations
 
     self.remaining_iterations = remaining_iterations
     
@@ -182,7 +182,7 @@ def _set_allowance(_new_allowance: uint256):
     """
     self.accounted_allowance = _new_allowance
 
-    # Resetting unaccounted period date
+    # Resetting unaccounted iteration date
     self._update_accounted_and_remaining_iterations()
 
     log AccountedAllowanceUpdated(_new_allowance)
@@ -192,7 +192,7 @@ def _set_allowance(_new_allowance: uint256):
 def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256, _new_start_date: uint256):
     """
     @notice 
-        Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
+        Sets new start date, allowance limit, rewards rate per iteration, and number of not accounted iterations.
     """
     assert msg.sender == self.owner, "manager: not permitted"
 
@@ -224,9 +224,9 @@ def notifyRewardAmount(amount: uint256, holder: address):
     new_allowance: uint256 = self._available_allowance()
     self._set_allowance(new_allowance)
 
-    unaccounted_periods: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
+    unaccounted_iterations: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
     
-    amount_to_distribute: uint256 = unaccounted_periods * self.rewards_rate_per_iteration + amount 
+    amount_to_distribute: uint256 = unaccounted_iterations * self.rewards_rate_per_iteration + amount 
     assert amount_to_distribute != 0, "manager: no funds"
   
     rate: uint256 = amount_to_distribute / rewards_iterations
