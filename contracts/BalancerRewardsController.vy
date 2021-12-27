@@ -107,8 +107,8 @@ def __init__(
     log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
     log Unpaused(self.owner)
     log AccountedAllowanceUpdated(self.accounted_allowance)
-    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
-    log RemainingIntervalsUpdated(0)
+    log AccountedIterationStartDateUpdated(self.accounted_iteration_start_date)
+    log RemainingIterationsUpdated(0)
 
 
 @internal
@@ -295,8 +295,6 @@ def unpause():
     self.is_paused = False
 
     log Unpaused(msg.sender)
-    log AccountedAllowanceUpdated(self.accounted_allowance)
-    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
 
 
 @external
