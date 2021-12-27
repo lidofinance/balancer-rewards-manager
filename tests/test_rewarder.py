@@ -10,9 +10,9 @@ amount = 300_000 * 10**18
 def test_init(ldo_agent, balancer_allocator, rewards_contract, program_start_date):
     assert rewards_contract.owner() == ldo_agent
     assert rewards_contract.allocator() == balancer_allocator
-    assert rewards_contract.rewards_rate_per_interval() == 0
+    assert rewards_contract.rewards_rate_per_iteration() == 0
     assert rewards_contract.accounted_allowance() == 0
-    assert rewards_contract.accounted_interval_start_date() == program_start_date - rewards_period
+    assert rewards_contract.accounted_iteration_start_date() == program_start_date - rewards_period
 
 
 def test_transfer_ownership(

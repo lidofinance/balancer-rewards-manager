@@ -25,7 +25,7 @@ def test_out_of_funding_date(rewards_contract, rewards_manager, dao_treasury, pe
     assert ldo_token.balanceOf(rewards_manager) == amount
     rewards_manager.start_next_rewards_period({"from": stranger})
 
-    period_finish = rewards_contract.accounted_interval_start_date() + rewards_period * 4
+    period_finish = rewards_contract.accounted_iteration_start_date() + rewards_period * 4
 
     chain.sleep(period)
     chain.mine()

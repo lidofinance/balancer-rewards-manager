@@ -40,22 +40,22 @@ event AccountedAllowanceUpdated:
     new_allowance: uint256
 
 
-event AccountedIntervalStartDateUpdated:
-    accounted_interval_start_date: uint256
+event AccountedIterationStartDateUpdated:
+    accounted_iteration_start_date: uint256
 
 
-event RemainingIntervalsUpdated:
-    remaining_intervals: uint256
+event RemainingIterationsUpdated:
+    remaining_iterations: uint256
 
 
 event RewardsRateUpdated:
-    rewards_rate_per_interval: uint256
+    rewards_rate_per_iteration: uint256
 
 
 event PeriodStarted:
-    intervals: uint256
+    iterations: uint256
     start_date: uint256
-    rewards_rate_per_interval: uint256
+    rewards_rate_per_iteration: uint256
 
 
 event Paused:
@@ -73,14 +73,14 @@ distributor: public(address)
 rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
-interval_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
+iterration_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
 rewards_iterations: constant(uint256) = 4          # number of iterations in one rewards period
 
-accounted_interval_start_date: public(uint256)
+accounted_iteration_start_date: public(uint256)
 accounted_allowance: public(uint256)
 
-remaining_intervals: public(uint256)        # number of iterations left for current rewards period
-rewards_rate_per_interval: public(uint256)
+remaining_iterations: public(uint256)        # number of iterations left for current rewards period
+rewards_rate_per_iteration: public(uint256)
 
 is_paused: public(bool)
 
@@ -95,12 +95,12 @@ def __init__(
     self.allocator = _allocator
     self.distributor = _distributor
 
-    self.accounted_allowance = 0    # allowance at accounted_interval_start_date
-    self.accounted_interval_start_date = _start_date - interval_duration
+    self.accounted_allowance = 0    # allowance at accounted_iteration_start_date
+    self.accounted_iteration_start_date = _start_date - iterration_duration
 
     self.is_paused = False
 
-    self.rewards_rate_per_interval = 0
+    self.rewards_rate_per_iteration = 0
 
     log OwnerChanged(ZERO_ADDRESS, self.owner)
     log AllocatorChanged(ZERO_ADDRESS, self.allocator)
@@ -117,7 +117,7 @@ def _period_finish() -> uint256:
     """
     @notice Date of last allowance increasing.
     """
-    return self.accounted_interval_start_date + self.remaining_intervals * interval_duration
+    return self.accounted_iteration_start_date + self.remaining_iterations * iterration_duration
 
 
 @internal
@@ -128,11 +128,14 @@ def _is_rewards_period_finished() -> bool:
 
 @internal
 @view
-def _unaccounted_periods() -> uint256:
-    accounted_interval_start_date: uint256 = self.accounted_interval_start_date
-    if (accounted_interval_start_date > block.timestamp):
+def _unaccounted_iterations() -> uint256:
+    """
+    @notice Number of full iterations from last accounted iteration 
+    """
+    accounted_iteration_start_date: uint256 = self.accounted_iteration_start_date
+    if (accounted_iteration_start_date > block.timestamp):
         return 0
-    return (block.timestamp - accounted_interval_start_date) / interval_duration
+    return (block.timestamp - accounted_iteration_start_date) / iterration_duration
 
 
 @internal
@@ -141,26 +144,24 @@ def _available_allowance() -> uint256:
     if self.is_paused == True:
         return self.accounted_allowance
     
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remaining_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
     
-    return self.accounted_allowance + unaccounted_periods * self.rewards_rate_per_interval
+    return self.accounted_allowance + unaccounted_periods * self.rewards_rate_per_iteration
 
 
 @internal
-def _update_accounted_and_remaining_intervals():
+def _update_accounted_and_remaining_iterations():
     """
     @notice 
-        Updates accounted_interval_start_date to timestamp of current period
-        and decreases remaining_intervals by number of intervals passed
+        Updates accounted_iteration_start_date to timestamp of current period
+        and decreases remaining_iterations by number of iterations passed
     """
-    unaccounted_periods: uint256 = self._unaccounted_periods()
+    unaccounted_periods: uint256 = self._unaccounted_iterations()
     if (unaccounted_periods == 0):
         return
 
-    accounted_interval_start_date: uint256 = self.accounted_interval_start_date \
-        + interval_duration * unaccounted_periods
-
-    self.accounted_interval_start_date = accounted_interval_start_date
+    accounted_iteration_start_date: uint256 = self.accounted_iteration_start_date \
+        + iterration_duration * unaccounted_periods
 
     self.accounted_iteration_start_date = accounted_iteration_start_date
     
@@ -182,10 +183,9 @@ def _set_allowance(_new_allowance: uint256):
     self.accounted_allowance = _new_allowance
 
     # Resetting unaccounted period date
-    self._update_accounted_and_remaining_intervals()
+    self._update_accounted_and_remaining_iterations()
 
     log AccountedAllowanceUpdated(_new_allowance)
-    log AccountedIntervalStartDateUpdated(self.accounted_interval_start_date)
 
 
 @external
@@ -212,7 +212,7 @@ def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_
 def notifyRewardAmount(amount: uint256, holder: address):
     """
     @notice
-        Starts the next rewards period from the begining of the next interval with amount from 
+        Starts the next rewards period from the begining of the next iteration with amount from 
         holder address.
         If call before period finished it will distibute remainded amout of non distibuted tokens 
         additionally to the provided amount.
@@ -224,17 +224,16 @@ def notifyRewardAmount(amount: uint256, holder: address):
     new_allowance: uint256 = self._available_allowance()
     self._set_allowance(new_allowance)
 
-    unaccounted_periods: uint256 = min(self._unaccounted_periods(), self.remaining_intervals)
+    unaccounted_periods: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
     
-    amount_to_distribute: uint256 = unaccounted_periods * self.rewards_rate_per_interval + amount 
+    amount_to_distribute: uint256 = unaccounted_periods * self.rewards_rate_per_iteration + amount 
     assert amount_to_distribute != 0, "manager: no funds"
   
     rate: uint256 = amount_to_distribute / rewards_iterations
-    self.rewards_rate_per_interval = rate
-    self.remaining_intervals = rewards_iterations
+    self.rewards_rate_per_iteration = rate
+    self.remaining_iterations = rewards_iterations
 
-    log PeriodStarted(rewards_iterations, self.accounted_interval_start_date, rate)
-
+    log PeriodStarted(rewards_iterations, self.accounted_iteration_start_date, rate)
 
 
 @external 
@@ -289,7 +288,7 @@ def unpause():
     assert msg.sender == self.owner, "manager: not permitted"
     assert self.is_paused, "manager: contract not paused"
 
-    self._update_accounted_and_remaining_intervals()
+    self._update_accounted_and_remaining_iterations()
     self.is_paused = False
 
     log Unpaused(msg.sender)

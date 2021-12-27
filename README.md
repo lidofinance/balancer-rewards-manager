@@ -92,11 +92,11 @@ event RewardsDistributorChanged:
 ```
 
 
-##### `set_state(_allowance: uint256, _remaining_intervals: uint256, _rewards_rate_per_interval: uint256,  _new_start_date: uint256: uint256)`
+##### `set_state(_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256,  _new_start_date: uint256: uint256)`
 
 Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
 
-Reverts if balace of contract is lower then _new_allowance + _remaining_intervals * _rewards_rate_per_interval
+Reverts if balace of contract is lower then _new_allowance + _remaining_iterations * _rewards_rate_per_iteration
 
 
 ##### `pause()`
