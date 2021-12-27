@@ -73,7 +73,7 @@ distributor: public(address)
 rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
-iterration_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
+iteration_duration: constant(uint256) = 604800     # 3600 * 24 * 7  (1 week)
 rewards_iterations: constant(uint256) = 4          # number of iterations in one rewards period
 
 accounted_iteration_start_date: public(uint256)
@@ -96,7 +96,7 @@ def __init__(
     self.distributor = _distributor
 
     self.accounted_allowance = 0    # allowance at accounted_iteration_start_date
-    self.accounted_iteration_start_date = _start_date - iterration_duration
+    self.accounted_iteration_start_date = _start_date - iteration_duration
 
     self.is_paused = False
 
@@ -117,7 +117,7 @@ def _period_finish() -> uint256:
     """
     @notice Date of last allowance increasing.
     """
-    return self.accounted_iteration_start_date + self.remaining_iterations * iterration_duration
+    return self.accounted_iteration_start_date + self.remaining_iterations * iteration_duration
 
 
 @internal
@@ -135,7 +135,7 @@ def _unaccounted_iterations() -> uint256:
     accounted_iteration_start_date: uint256 = self.accounted_iteration_start_date
     if (accounted_iteration_start_date > block.timestamp):
         return 0
-    return (block.timestamp - accounted_iteration_start_date) / iterration_duration
+    return (block.timestamp - accounted_iteration_start_date) / iteration_duration
 
 
 @internal
@@ -161,7 +161,7 @@ def _update_accounted_and_remaining_iterations():
         return
 
     accounted_iteration_start_date: uint256 = self.accounted_iteration_start_date \
-        + iterration_duration * unaccounted_periods
+        + iteration_duration * unaccounted_periods
 
     self.accounted_iteration_start_date = accounted_iteration_start_date
     
@@ -196,7 +196,7 @@ def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_
     """
     assert msg.sender == self.owner, "manager: not permitted"
 
-    accounted_iteration_start_date: uint256 = _new_start_date - iterration_duration
+    accounted_iteration_start_date: uint256 = _new_start_date - iteration_duration
     self.accounted_iteration_start_date = accounted_iteration_start_date
     self.accounted_allowance = _new_allowance
     self.remaining_iterations = _remaining_iterations
