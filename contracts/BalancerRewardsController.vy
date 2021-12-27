@@ -194,33 +194,23 @@ def _update_allowance():
 
 
 @external
-def set_state(_new_allowance: uint256, _remaining_intervals: uint256, _rewards_rate_per_interval: uint256, _new_start_date: uint256):
+def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256, _new_start_date: uint256):
     """
     @notice 
         Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
-
-        Reverts if balace of contract is lower then _new_allowance + _remaining_intervals * _rewards_rate_per_interval
     """
     assert msg.sender == self.owner, "manager: not permitted"
-    rewarder_balance: uint256 = ERC20(rewards_token).balanceOf(self)
-    required_balance: uint256 = _new_allowance + _remaining_intervals * _rewards_rate_per_interval
-    assert rewarder_balance >= required_balance, "manager: reward token balance is low"
-    if (_new_start_date == 0):
-        self._set_allowance(_new_allowance)
-    else:
-        accounted_interval_start_date: uint256 = _new_start_date - interval_duration
-        self.accounted_interval_start_date = accounted_interval_start_date
-        self.accounted_allowance = _new_allowance
 
-        log AccountedAllowanceUpdated(_new_allowance)
-        log AccountedIntervalStartDateUpdated(accounted_interval_start_date)
+    accounted_iteration_start_date: uint256 = _new_start_date - iterration_duration
+    self.accounted_iteration_start_date = accounted_iteration_start_date
+    self.accounted_allowance = _new_allowance
+    self.remaining_iterations = _remaining_iterations
+    self.rewards_rate_per_iteration = _rewards_rate_per_iteration
 
-    self.remaining_intervals = _remaining_intervals
-    self.rewards_rate_per_interval = _rewards_rate_per_interval
-
-    log RemainingIntervalsUpdated(_remaining_intervals)
-    log RewardsRateUpdated(_rewards_rate_per_interval)
-
+    log AccountedAllowanceUpdated(_new_allowance)
+    log AccountedIterationStartDateUpdated(accounted_iteration_start_date)
+    log RemainingIterationsUpdated(_remaining_iterations)
+    log RewardsRateUpdated(_rewards_rate_per_iteration)
 
 
 @external
