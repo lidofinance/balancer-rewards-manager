@@ -83,6 +83,7 @@ remaining_iterations: public(uint256)        # number of iterations left for cur
 rewards_rate_per_iteration: public(uint256)
 
 is_paused: public(bool)
+is_initialized: public(bool)
 
 
 @external
@@ -221,8 +222,11 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
     assert ERC20(rewards_token).transferFrom(holder, self, amount), "manager: transfer failed"
 
-    new_allowance: uint256 = self._available_allowance()
-    self._set_allowance(new_allowance)
+    if self.is_initialized:  
+        new_allowance: uint256 = self._available_allowance()
+        self._set_allowance(new_allowance)
+    else:
+        self.is_initialized = True
 
     unaccounted_iterations: uint256 = min(self._unaccounted_iterations(), self.remaining_iterations)
     
@@ -371,4 +375,3 @@ def available_allowance() -> uint256:
         by calling createDistribution
     """
     return self._available_allowance()
-

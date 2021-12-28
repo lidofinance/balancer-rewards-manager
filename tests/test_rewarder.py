@@ -327,3 +327,22 @@ def test_createDistribution_passes_right_data(
 
     assert merkle_contract.getDistributionRoot(ldo_token, rewards_contract, 0) == mock_root
 
+
+def test_initialize(
+    rewards_contract, 
+    rewards_manager,
+    ldo_agent,
+    ldo_token,
+    dao_treasury,
+    program_start_date,
+    stranger
+):
+    ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
+
+    chain.sleep(program_start_date + rewards_period - chain.time() + 1)
+    chain.mine()
+
+    assert rewards_contract.is_initialized() == False
+    rewards_manager.start_next_rewards_period({"from": stranger})
+    assert rewards_contract.is_initialized() == True
+    assert rewards_contract.available_allowance() == 2 * rewards_limit 
