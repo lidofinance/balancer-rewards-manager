@@ -87,6 +87,16 @@ def rewards_contract(rewarder):
     return rewarder[1]
 
 
+@pytest.fixture(scope='module')
+def easytrack_contract(interface):
+    return interface.EasyTrack('0xF0211b7660680B49De1A7E9f25C65660F0a13Fea')
+
+
+@pytest.fixture(scope='module')
+def rewards_multisig(accounts):
+    return accounts.at('0x87d93d9b2c672bf9c9642d853a8682546a5012b5',force=True)
+
+
 class Helpers:
     @staticmethod
     def filter_events_from(addr, events):
