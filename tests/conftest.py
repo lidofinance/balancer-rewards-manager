@@ -27,7 +27,7 @@ def ape(accounts):
 
 
 @pytest.fixture(scope='module')
-def balancer_allocator(accounts):
+def balancer_distributor(accounts):
     return accounts.at('0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa',force=True)
 
 
@@ -73,8 +73,8 @@ def merkle_contract(interface):
 
 
 @pytest.fixture(scope='module')
-def rewarder(deployer, balancer_allocator, program_start_date):
-    return deploy_manager_and_reward_contract(balancer_allocator, program_start_date, {"from": deployer})
+def rewarder(deployer, balancer_distributor, program_start_date):
+    return deploy_manager_and_reward_contract(balancer_distributor, program_start_date, {"from": deployer})
 
 
 @pytest.fixture(scope='module')

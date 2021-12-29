@@ -16,14 +16,14 @@ event OwnerChanged:
     new_owner: indexed(address)
 
 
-event AllocatorChanged:
-    previous_allocator: indexed(address)
-    new_allocator: indexed(address)
+event BalancerDistributorChanged:
+    previous_balancer_distributor: indexed(address)
+    new_balancer_distributor: indexed(address)
 
 
-event RewardsDistributorChanged:
-    previous_distributor: indexed(address)
-    new_distributor: indexed(address)
+event RewardsManagerChanged:
+    previous_rewards_manager: indexed(address)
+    new_rewards_manager: indexed(address)
 
 
 event RewardsDistributed:
@@ -67,8 +67,8 @@ event Unpaused:
 
 
 owner: public(address)
-allocator: public(address)
-distributor: public(address)
+balancer_distributor: public(address)
+rewards_manager: public(address)
 
 rewards_contract: constant(address) = 0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca
 rewards_token: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
@@ -88,13 +88,13 @@ is_initialized: public(bool)
 
 @external
 def __init__(
-    _allocator: address,
-    _distributor: address,
+    _balancer_distributor: address,
+    _rewards_manager: address,
     _start_date: uint256
 ):
     self.owner = msg.sender
-    self.allocator = _allocator
-    self.distributor = _distributor
+    self.balancer_distributor = _balancer_distributor
+    self.rewards_manager = _rewards_manager
 
     self.accounted_allowance = 0    # allowance at accounted_iteration_start_date
     self.accounted_iteration_start_date = _start_date - iteration_duration
@@ -104,8 +104,8 @@ def __init__(
     self.rewards_rate_per_iteration = 0
 
     log OwnerChanged(ZERO_ADDRESS, self.owner)
-    log AllocatorChanged(ZERO_ADDRESS, self.allocator)
-    log RewardsDistributorChanged(ZERO_ADDRESS, self.distributor)
+    log BalancerDistributorChanged(ZERO_ADDRESS, self.balancer_distributor)
+    log RewardsManagerChanged(ZERO_ADDRESS, self.rewards_manager)
     log Unpaused(self.owner)
     log AccountedAllowanceUpdated(self.accounted_allowance)
     log AccountedIterationStartDateUpdated(self.accounted_iteration_start_date)
@@ -218,7 +218,7 @@ def notifyRewardAmount(amount: uint256, holder: address):
         If call before period finished it will distibute remainded amout of non distibuted tokens 
         additionally to the provided amount.
     """
-    assert msg.sender == self.distributor, "manager: not permitted"
+    assert msg.sender == self.rewards_manager, "manager: not permitted"
 
     assert ERC20(rewards_token).transferFrom(holder, self, amount), "manager: transfer failed"
 
@@ -248,9 +248,9 @@ def createDistribution(token: address, _merkle_root: bytes32, _amount: uint256, 
         of Merkle rewards contract and allowes to distibute LDO token holded by this contract
         with amount limited by available_allowance()
 
-        Can be called by allocator address only.
+        Can be called by balancer_distributor address only.
     """
-    assert msg.sender == self.allocator, "manager: not permitted"
+    assert msg.sender == self.balancer_distributor, "manager: not permitted"
     assert rewards_token == token, "manager: only LDO distribution allowed"
     assert self.is_paused == False, "manager: contract is paused"
     assert ERC20(rewards_token).balanceOf(self) >= _amount, "manager: reward token balance is low"
@@ -311,27 +311,27 @@ def transfer_ownership(_to: address):
 
 
 @external
-def set_allocator(_new_allocator: address):
+def set_balancer_distributor(_new_balancer_distributor: address):
     """
-    @notice Changes the allocator. Can only be called by the current owner or current allocator.
+    @notice Changes the balancer_distributor. Can only be called by the current owner or current balancer_distributor.
     """
-    previous_allocator: address = self.allocator
-    assert msg.sender == self.owner or msg.sender ==  previous_allocator, "manager: not permitted"
-    assert _new_allocator != ZERO_ADDRESS, "manager: zero address not allowed"
-    self.allocator = _new_allocator
-    log AllocatorChanged(previous_allocator, _new_allocator)
+    previous_balancer_distributor: address = self.balancer_distributor
+    assert msg.sender == self.owner or msg.sender ==  previous_balancer_distributor, "manager: not permitted"
+    assert _new_balancer_distributor != ZERO_ADDRESS, "manager: zero address not allowed"
+    self.balancer_distributor = _new_balancer_distributor
+    log BalancerDistributorChanged(previous_balancer_distributor, _new_balancer_distributor)
 
 
 @external
-def set_distributor(_new_distributor: address):
+def set_rewards_manager(_new_rewards_manager: address):
     """
-    @notice Changes the distributor. Can only be called by the current owner.
+    @notice Changes the rewards_manager. Can only be called by the current owner.
     """
     assert msg.sender == self.owner, "manager: not permitted"
-    assert _new_distributor != ZERO_ADDRESS, "manager: zero address not allowed"
-    previous_distributor: address = self.distributor
-    self.distributor = _new_distributor
-    log RewardsDistributorChanged(previous_distributor, _new_distributor)
+    assert _new_rewards_manager != ZERO_ADDRESS, "manager: zero address not allowed"
+    previous_rewards_manager: address = self.rewards_manager
+    self.rewards_manager = _new_rewards_manager
+    log RewardsManagerChanged(previous_rewards_manager, _new_rewards_manager)
 
 
 @external

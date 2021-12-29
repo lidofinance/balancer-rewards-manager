@@ -10,7 +10,7 @@ rewards_period = 3600 * 24 * 7
 amount = 300_000 * 10**18
 
 def test_happy_path(
-    balancer_allocator, 
+    balancer_distributor, 
     ldo_token, 
     dao_treasury, 
     deployer,
@@ -18,7 +18,7 @@ def test_happy_path(
     program_start_date
     ):
 
-    (rewards_manager, rewards_contract) = deploy_manager_and_reward_contract(balancer_allocator, program_start_date, {"from": deployer})
+    (rewards_manager, rewards_contract) = deploy_manager_and_reward_contract(balancer_distributor, program_start_date, {"from": deployer})
 
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
 
@@ -37,10 +37,10 @@ def test_happy_path(
     assert rewards_contract.available_allowance() == rewards_limit
 
     with reverts('manager: not enough amount approved'):
-        rewards_contract.createDistribution(ldo_token, '', rewards_limit + 1, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(ldo_token, '', rewards_limit + 1, 0, {"from": balancer_distributor})
     with reverts('manager: only LDO distribution allowed'):
-        rewards_contract.createDistribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_allocator})
-    rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_allocator})
+        rewards_contract.createDistribution(steth_token_address, '', rewards_limit, 0, {"from": balancer_distributor})
+    rewards_contract.createDistribution(ldo_token, '', rewards_limit, 0, {"from": balancer_distributor})
 
     assert ldo_token.balanceOf(rewards_contract) == amount - rewards_limit
     assert rewards_contract.available_allowance() == 0

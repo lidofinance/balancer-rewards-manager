@@ -9,7 +9,7 @@ Rewarder weekly approves certain amount of LDO to be spendable by Balancer contr
 
 `DEPLOYER` deployer account
 
-`ALLOCATOR` balancer allocator account
+`BALANCER_DISTRIBUTOR` balancer distributor account
 
 `OWNER` address of manager owner
 
@@ -40,16 +40,16 @@ event RewardsDistributed:
     amount: uint256
 ```
 
-##### `set_allocator(_new_allocator: address)`
+##### `set_balancer_distributor(_new_balancer_distributor: address)`
 
-Changes `ALLOCATOR`. Can be called by owner or current allocator.
+Changes `BALANCER_DISTRIBUTOR`. Can be called by owner or current balancer_distributor.
 
 Events:
 
 ```vyper=
-event AllocatorChanged:
-    previous_allocator: address
-    new_allocator: address
+event BalancerDistributorChanged:
+    previous_balancer_distributor: address
+    new_balancer_distributor: address
 ```
 
 ## Levers
@@ -67,34 +67,34 @@ event OwnerChanged:
 ```
 
 
-##### `set_allocator(_new_allocator: address)`
+##### `set_balancer_distributor(_new_balancer_distributor: address)`
 
-Changes `ALLOCATOR`. Can be called by owner or current allocator.
+Changes `BALANCER_DISTRIBUTOR`. Can be called by owner or current balancer_distributor.
 
 Events:
 
 ```vyper=
-event AllocatorChanged:
-    previous_allocator: address
-    new_allocator: address
+event BalancerDistributorChanged:
+    previous_balancer_distributor: address
+    new_balancer_distributor: address
 ```
 
-##### `set_distributor(_new_distributor: address)`
+##### `set_rewards_manager(_new_rewards_manager: address)`
 
 Changes `DISTRIBUTOR`. Can be called by owner only.
 
 Events:
 
 ```vyper=
-event RewardsDistributorChanged:
-    previous_distributor: address
-    new_distributor: address
+event RewardsManagerChanged:
+    previous_rewards_manager: address
+    new_rewards_manager: address
 ```
 
 
 ##### `set_state(_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256,  _new_start_date: uint256: uint256)`
 
-Sets new start date, allowance limit, rewards rate per period, and number of not accounted periods.
+Sets new start date, allowance limit, rewards rate per iteration, and number of not accounted iterations.
 
 Reverts if balace of contract is lower then _new_allowance + _remaining_iterations * _rewards_rate_per_iteration
 

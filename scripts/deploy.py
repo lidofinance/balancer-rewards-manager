@@ -16,12 +16,12 @@ from utils.config import (
 def main():
     is_live = get_is_live()
     deployer = get_deployer_account(is_live)
-    allocator = get_env('ALLOCATOR')
+    balancer_distributor = get_env('BALANCER_DISTRIBUTOR')
     owner = get_env('OWNER')
     start_date = get_env('START_DATE')
 
     print('Deployer:', deployer)
-    print('Allocator:', allocator)
+    print('Balancer Distributor:', balancer_distributor)
     print('Owner:', owner)
     print(
         'Program start date:', 
@@ -35,7 +35,7 @@ def main():
         return
 
     (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
-        allocator,
+        balancer_distributor,
         start_date,
         tx_params={"from": deployer, "priority_fee": "4 gwei"}
     )
@@ -44,11 +44,11 @@ def main():
     print('Rewards contract: ', rewards_contract)
 
 
-def deploy_manager_and_reward_contract(allocator, start_date, tx_params):
+def deploy_manager_and_reward_contract(balancer_distributor, start_date, tx_params):
     rewarder_contract = RewardsManager.deploy(tx_params)
     rewards_contract =  BalancerRewardsController.deploy(
-        allocator, # _allocator
-        rewarder_contract, # distributor
+        balancer_distributor, # _balancer_distributor
+        rewarder_contract, # rewards_manager
         start_date,
         tx_params,
         publish_source=False,
