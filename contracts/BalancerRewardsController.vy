@@ -194,6 +194,10 @@ def set_state(_new_allowance: uint256, _remaining_iterations: uint256, _rewards_
     """
     @notice 
         Sets new start date, allowance limit, rewards rate per iteration, and number of not accounted iterations.
+
+        Allows to confirate program state without calling notifyRewardAmount, may be used to fix previous allowance state.
+
+        Can be called by owner only.
     """
     assert msg.sender == self.owner, "manager: not permitted"
 
@@ -222,6 +226,7 @@ def notifyRewardAmount(amount: uint256, holder: address):
 
     assert ERC20(rewards_token).transferFrom(holder, self, amount), "manager: transfer failed"
 
+    # Allows to start first rewards period from start date passed in constructor call
     if self.is_initialized:  
         new_allowance: uint256 = self._available_allowance()
         self._set_allowance(new_allowance)
