@@ -16,13 +16,11 @@ from utils.config import (
 def main():
     is_live = get_is_live()
     deployer = get_deployer_account(is_live)
-    balancer_distributor = get_env('BALANCER_DISTRIBUTOR')
-    owner = get_env('OWNER')
+    balancer_distributor = '0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa'
     start_date = get_env('START_DATE')
 
     print('Deployer:', deployer)
     print('Balancer Distributor:', balancer_distributor)
-    print('Owner:', owner)
     print(
         'Program start date:', 
         time.ctime(int(start_date))

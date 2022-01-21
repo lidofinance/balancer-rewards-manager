@@ -9,10 +9,6 @@ Rewarder weekly approves certain amount of LDO to be spendable by Balancer contr
 
 `DEPLOYER` deployer account
 
-`BALANCER_DISTRIBUTOR` balancer distributor account
-
-`OWNER` address of manager owner
-
 ## BalancerRewardsController.vy
 ### Balancer side
 
