@@ -100,6 +100,7 @@ def __init__(
     self.accounted_iteration_start_date = _start_date - iteration_duration
 
     self.is_paused = False
+    self.is_initialized = False
 
     self.rewards_rate_per_iteration = 0
 
@@ -223,6 +224,8 @@ def notifyRewardAmount(amount: uint256, holder: address):
         additionally to the provided amount.
     """
     assert msg.sender == self.rewards_manager, "manager: not permitted"
+
+    assert self.is_paused == False, "manager: contract is paused"
 
     assert ERC20(rewards_token).transferFrom(holder, self, amount), "manager: transfer failed"
 

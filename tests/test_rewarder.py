@@ -165,6 +165,9 @@ def test_pause(
     with reverts('manager: contract is paused'):
         rewards_contract.createDistribution(ldo_token, '', 0, 1, {"from": balancer_distributor})
 
+    with reverts('manager: contract is paused'):
+        rewards_contract.notifyRewardAmount(1, ldo_agent, {"from": rewards_manager})
+
     with reverts("manager: not permitted"):
         rewards_contract.unpause({"from": stranger})
     tx = rewards_contract.unpause({"from": ldo_agent})
