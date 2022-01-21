@@ -101,8 +101,7 @@ def test_allowance_paused_calculation(
     dao_treasury, 
     ldo_token, 
     stranger, 
-    ldo_agent, 
-    program_start_date
+    ldo_agent
     ):
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     assert ldo_token.balanceOf(rewards_manager) == amount
@@ -132,8 +131,7 @@ def test_pause(
     stranger, 
     ldo_agent, 
     helpers, 
-    balancer_distributor, 
-    program_start_date
+    balancer_distributor
     ):
     ldo_token.transfer(rewards_manager, amount, {"from": dao_treasury})
     assert ldo_token.balanceOf(rewards_manager) == amount
@@ -334,7 +332,6 @@ def test_createDistribution_passes_right_data(
 def test_initialize(
     rewards_contract, 
     rewards_manager,
-    ldo_agent,
     ldo_token,
     dao_treasury,
     program_start_date,

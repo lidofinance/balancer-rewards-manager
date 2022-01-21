@@ -90,10 +90,10 @@ def test_happy_path_with_dates(
     rewards_multisig
 ):
 
-    program_start_date = 1641168000 # Mon Jan 03 2022 00:00:00 GMT+0000
-    deploy_date = 1640865600 # Thu Dec 30 2021 12:00:00 GMT+0000
-    start_new_reward_period_date = 1641729600 # Sun Jan 09 2022 12:00:00 GMT+0000
-    balancer_first_distribution_date = 1641902400 # Thu Jan 11 2022 12:00:00 GMT+0000
+    program_start_date = 1643587200 # Mon Jan 31 2022 00:00:00 GMT+0000
+    deploy_date = 1642932000 # Sun Jan 23 2022 10:00:00 GMT+0000
+    start_new_reward_period_date = 1643709600 # Tue Feb 01 2022 10:00:00 GMT+0000
+    balancer_first_distribution_date = 1644314400 # Tue Feb 08 2022 10:00:00 GMT+0000
     
     chain.sleep(deploy_date - chain.time()) 
     chain.mine()
@@ -103,24 +103,26 @@ def test_happy_path_with_dates(
 
     add_program_motion_calldata =  '0x000000000000000000000000' + rewards_manager.address.lower()[2:] + '00000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000025537573686953776170204c502072657761726473204d616e6167657220436f6e7472616374000000000000000000000000000000000000000000000000000000'
 
-    easytrack_contract.createMotion(
+    tx = easytrack_contract.createMotion(
         '0x9D15032b91d01d5c1D940eb919461426AB0dD4e3', 
         add_program_motion_calldata,
         {"from": rewards_multisig}
     )
+    motion_id = tx.events['MotionCreated']['_motionId']
 
     chain.sleep(3600*72) # waiting motion 
     chain.mine()
     print('add program motion enact date: ', datetime.fromtimestamp(chain.time()))
 
     easytrack_contract.enactMotion(
-        9,
+        motion_id,
         add_program_motion_calldata,
         {"from": rewards_multisig}
     )
 
     topup_program_motion_calldata = '0x000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000001000000000000000000000000' + rewards_manager.address.lower()[2:] + '0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000003f870857a3e0e3800000'
 
+    print(topup_program_motion_calldata);
     easytrack_contract.createMotion(
         '0x77781A93C4824d2299a38AC8bBB11eb3cd6Bc3B7',
         topup_program_motion_calldata, 
@@ -132,7 +134,7 @@ def test_happy_path_with_dates(
     print('topup program motion enact date: ', datetime.fromtimestamp(chain.time()))
 
     easytrack_contract.enactMotion(
-        10,
+        motion_id + 1,
         topup_program_motion_calldata,
         {"from": rewards_multisig}
     )
@@ -174,7 +176,7 @@ def test_happy_path_with_dates(
     print('topup program motion enact date: ', datetime.fromtimestamp(chain.time()))
 
     easytrack_contract.enactMotion(
-        11,
+        motion_id + 2,
         topup_program_motion_calldata,
         {"from": rewards_multisig}
     )
@@ -182,7 +184,7 @@ def test_happy_path_with_dates(
     rewards_manager.start_next_rewards_period({"from": stranger})
 
     
-    chain.sleep(1643716800 - chain.time()) # Tue Feb 01 2022 12:00:00 GMT+0000
+    chain.sleep(1646136000 - chain.time()) # Tue Mar 01 2022 12:00:00 GMT+0000
     chain.mine()
 
     for i in range(4): 
