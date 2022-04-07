@@ -1,13 +1,23 @@
-# @version 0.3.0
-# @notice A manager contract for the StakingRewards contract.
-# @author skozin
+# @version 0.3.1
+# @notice A manager contract for the Balancer Liquidity Gauge contract.
+# @author bulbozaur
 # @license MIT
+
 from vyper.interfaces import ERC20
 
+struct BalancerReward:
+    token: address
+    distributor: address
+    period_finish: uint256
+    rate: uint256
+    last_update: uint256
+    integral: uint256
 
-interface StakingRewards:
-    def periodFinish() -> uint256: view
-    def notifyRewardAmount(reward: uint256, rewardHolder: address): nonpayable
+
+interface BalancerLiquidityGauge:
+    def reward_data(addr: address) -> BalancerReward: view
+    def deposit_reward_token(_reward_token: address, _amount: uint256): nonpayable
+    def set_reward_distributor(_reward_token: address, _distributor: address): nonpayable
 
 
 owner: public(address)
@@ -32,15 +42,28 @@ def transfer_ownership(_to: address):
 @external
 def set_rewards_contract(_rewards_contract: address):
     """
-    @notice Sets the StakingRewards contract. Can only be called by the owner.
+    @notice Sets the BalancerLiquidityGauge contract. Can only be called by the owner.
     """
     assert msg.sender == self.owner, "not permitted"
     self.rewards_contract = _rewards_contract
 
+
+@external
+def transfer_rewards_contract(_to: address):
+    """
+    @notice Changes the reward contracts distributor. Can only be called by the current owner.
+    """
+    assert msg.sender == self.owner, "not permitted"
+    assert _to != ZERO_ADDRESS
+    BalancerLiquidityGauge(self.rewards_contract).set_reward_distributor(ldo_token, _to)
+
+
 @view
 @internal
-def _period_finish(rewards_contract: address) -> uint256:
-    return StakingRewards(rewards_contract).periodFinish()
+def _period_finish(rewards_contract: address, ) -> uint256:
+    reward_data: BalancerReward = BalancerLiquidityGauge(rewards_contract).reward_data(ldo_token)
+    return reward_data.period_finish
+
 
 @view
 @internal
@@ -61,15 +84,16 @@ def is_rewards_period_finished() -> bool:
 @external
 def period_finish() -> uint256:
     """
-    @notice Returns end of the rewards period of StakingRewards contract
+    @notice Returns end of the rewards period of BalancerLiquidityGauge contract
     """
     return self._period_finish(self.rewards_contract)
+
 
 @external
 def start_next_rewards_period():
     """
     @notice
-        Starts the next rewards period of duration `rewards_contract.rewardsDuration()`,
+        Starts the next rewards period of duration `rewards_contract.deposit_reward_token(address, uint256)`,
         distributing `ldo_token.balanceOf(self)` tokens throughout the period. The current
         rewards period must be finished by this time.
     """
@@ -80,7 +104,7 @@ def start_next_rewards_period():
     assert self._is_rewards_period_finished(rewards), "manager: rewards period not finished"
 
     ERC20(ldo_token).approve(rewards, amount)
-    StakingRewards(rewards).notifyRewardAmount(amount, self)
+    BalancerLiquidityGauge(rewards).deposit_reward_token(ldo_token, amount)
 
 
 @external

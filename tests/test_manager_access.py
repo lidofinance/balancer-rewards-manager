@@ -1,6 +1,6 @@
 import pytest
 from brownie import chain, reverts, Wei, ZERO_ADDRESS
-from brownie.network.state import Chain
+
 
 rewards_period = 3600 * 24 * 7
 random_address = "0xb842afd82d940ff5d8f6ef3399572592ebf182b0"
@@ -18,6 +18,19 @@ def test_stranger_can_not_transfer_ownership(rewards_manager, stranger):
 def test_ownership_can_be_transferred(rewards_manager, ldo_agent, stranger):
     rewards_manager.transfer_ownership(stranger, {"from": ldo_agent})
     assert rewards_manager.owner() == stranger
+
+
+def test_stranger_can_not_transfer_rewards_contract(rewards_manager, stranger):
+    with reverts("not permitted"):
+        rewards_manager.transfer_rewards_contract(stranger, {"from": stranger})
+
+
+def test_rewards_contract_can_be_transferred(rewards_manager, ldo_agent, ldo_token, rewards_contract_mock, stranger):
+    reward = rewards_contract_mock.reward_data(ldo_token)
+    assert reward[1] == rewards_manager
+    rewards_manager.transfer_rewards_contract(stranger, {"from": ldo_agent})
+    reward = rewards_contract_mock.reward_data(ldo_token)
+    assert reward[1] == stranger
 
 
 def test_ownership_can_be_transferred_to_zero_address(rewards_manager, ldo_agent):
@@ -94,7 +107,7 @@ def test_stranger_can_not_start_next_rewards_period_while_current_is_active(
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
     assert rewards_manager.is_rewards_period_finished({"from": stranger}) == True
     rewards_manager.start_next_rewards_period({"from": stranger})
-    chain = Chain()
+
     chain.sleep(1)
     chain.mine()
 
@@ -111,8 +124,9 @@ def test_stranger_can_start_next_rewards_period_after_current_is_finished(
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
     assert rewards_manager.is_rewards_period_finished({"from": stranger}) == True
     rewards_manager.start_next_rewards_period({"from": stranger})
-    chain = Chain()
-    chain.sleep(rewards_period*4)
+    assert rewards_manager.is_rewards_period_finished({"from": stranger}) == False
+
+    chain.sleep(rewards_period)
     chain.mine()
 
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
