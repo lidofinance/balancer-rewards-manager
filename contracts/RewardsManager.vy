@@ -1,4 +1,4 @@
-# @version 0.3.0
+# @version 0.3.1
 # @notice A manager contract for the StakingRewards contract.
 # @author skozin
 # @license MIT

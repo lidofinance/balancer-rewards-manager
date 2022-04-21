@@ -94,7 +94,7 @@ def test_stranger_can_not_start_next_rewards_period_while_current_is_active(
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
     assert rewards_manager.is_rewards_period_finished({"from": stranger}) == True
     rewards_manager.start_next_rewards_period({"from": stranger})
-    chain = Chain()
+
     chain.sleep(1)
     chain.mine()
 
@@ -105,15 +105,18 @@ def test_stranger_can_not_start_next_rewards_period_while_current_is_active(
 
 
 def test_stranger_can_start_next_rewards_period_after_current_is_finished(
-    rewards_manager, ldo_token, ldo_agent, stranger
+    rewards_manager, balancer_wrapper, ldo_token, ldo_agent, stranger
 ):
     rewards_amount = Wei("1 ether")
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
     assert rewards_manager.is_rewards_period_finished({"from": stranger}) == True
     rewards_manager.start_next_rewards_period({"from": stranger})
-    chain = Chain()
-    chain.sleep(rewards_period*4)
-    chain.mine()
+    assert rewards_manager.is_rewards_period_finished({"from": stranger}) == False
+
+    for week in range (4):
+        balancer_wrapper.start_next_rewards_period({"from": stranger})
+        chain.sleep(rewards_period) 
+        chain.mine()
 
     ldo_token.transfer(rewards_manager, rewards_amount, {"from": ldo_agent})
     assert rewards_manager.is_rewards_period_finished({"from": stranger}) == True

@@ -1,133 +1,65 @@
 # Balancer rewards manager
 
-This repository contains Lido rewards controller for [Balancer Merkle Orchard contract](https://github.com/balancer-labs/balancer-v2-monorepo/blob/master/pkg/distributors/contracts/MerkleOrchard.sol) and manager for simplifying managing it via DAO voting.
-Rewarder weekly approves certain amount of LDO to be spendable by Balancer contract. And provides interface to general rewards manager.
+This repository contains rewards manager and wrapper for [Balancer Liquidity Gauge](https://etherscan.io/address/0xcD4722B7c24C29e0413BDCd9e51404B4539D14aE#code) for simplifying managing it via DAO voting and easytracks.
 
 ## Deploying Environment
 
-`deploy.py` script that deploys `BalancerRewardsController` and `RewardsManager` contracts. The script next ENV variables be set.
+`deploy.py` script that deploys `RewardsManager` contract. The script next ENV variables be set.
 
 `DEPLOYER` deployer account
 
-## BalancerRewardsController.vy
-### Balancer side
+## Testing
 
-##### `view available_allowance() -> uint256`
+`brownie test -s`
 
-Returns current allowance limit available for distribution by calling `createDistribution`
+## Poetry
 
-##### `createDistribution(_token: address, _merkle_root: bytes32, _amount: uint256, _distribution_id: uint256):`
+`poetry install`
 
-Wrapper for `createDistribution` of MerkleOrchard contract.
+`poetry console`
 
-Wrapper for `createDistribution(token: ERC20, merkleRoot: bytes32, amount: uint256, distributionId: uint256)`
-of Merkle Orchard contract and allowes to distibute LDO token holded by this contract
-with amount limited by available_allowance()
+#### Wrapper
 
-Reverts if `_amount` is greater than Manager balance or allowance limit.
-Reverts if `_token` is not LDO.
-Reverts if contract is paused.
-Reverts if contract has not enough balance to distribute `_amount` of LDO
+Contract implements interface for [RewardsManager](https://github.com/lidofinance/staking-rewards-manager) :
 
-Events:
+**def notifyRewardAmount(reward: uint256, rewardHolder: address):: nonpayable**
 
-```vyper=
-event RewardsDistributed:
-    amount: uint256
-```
+Takes reward amount from `rewardHolder`, adds it's own LDO balance, calculates weekly rewards amount and saves the result as `weekly_amount`, only distributor (manager contract) can do it.
 
-##### `set_balancer_distributor(_new_balancer_distributor: address)`
+**def periodFinish() -> uint256: view**
+    
+Returns estimated date of last rewards period start date
+    
+    BLG.periodFinish + (LDO.balanceOf(self)/self.rewardAmount - 1) * WEEK_IN_SECONDS
+    
+Contract has permissionless method to start a new rewards period at BLG contract.
 
-Changes `BALANCER_DISTRIBUTOR`. Can be called by owner or current balancer_distributor.
+**def start_next_rewards_period()**
 
-Events:
+Permissionless method, allows to start new weekly rewards period at Balancer Liquidity Gauge 
 
-```vyper=
-event BalancerDistributorChanged:
-    previous_balancer_distributor: address
-    new_balancer_distributor: address
-```
+If contact has enough assets in it (`LDO.balanceOf(self) >= self.weekly_amount`), and the BLG period is finished, it will start a new period by calling `deposit_reward_token(_reward_token: address, _amount: uint256): nonpayable` with `self.weekly_amount` as amount of LDO
 
-## Levers
+**def balancer_period_finish() -> uint256:**
 
-##### `transfer_ownership(_to: address)`
+Returns timestamp of current period ending at Balancer Liquiditi Gauge
 
-Changes `OWNER`. Can be called by owner only.
+**def is_balancer_rewards_period_finished() -> bool:**
 
-Events:
+Sign of ending of current rewards period at Balancer Liquidity Gauge
 
-```vyper=
-event OwnerChanged:
-    previous_owner: address
-    new_owner: address
-```
+### Levers (owner only)
 
+**def transfer_ownership(_to: address):**
 
-##### `set_balancer_distributor(_new_balancer_distributor: address)`
+**def transfer_rewards_contract(_to: address):**
 
-Changes `BALANCER_DISTRIBUTOR`. Can be called by owner or current balancer_distributor.
+**def set_rewards_contract(_rewards_contract: address):**
 
-Events:
+**def set_distributor(_new_disributor: address):**
 
-```vyper=
-event BalancerDistributorChanged:
-    previous_balancer_distributor: address
-    new_balancer_distributor: address
-```
+**def set_min_rewards_amount(_new_min_rewards_amount: uint256):**
 
-##### `set_rewards_manager(_new_rewards_manager: address)`
+**def set_weekly_amount(_new_weekly_amount: uint256):**
 
-Changes `DISTRIBUTOR`. Can be called by owner only.
-
-Events:
-
-```vyper=
-event RewardsManagerChanged:
-    previous_rewards_manager: address
-    new_rewards_manager: address
-```
-
-
-##### `set_state(_allowance: uint256, _remaining_iterations: uint256, _rewards_rate_per_iteration: uint256,  _new_start_date: uint256: uint256)`
-
-Sets new start date, allowance limit, rewards rate per iteration, and number of not accounted iterations.
-
-Reverts if balace of contract is lower then _new_allowance + _remaining_iterations * _rewards_rate_per_iteration
-
-
-##### `pause()`
-
-Stops updating allowance limit and rejects `create_ldo_distribution` calls. Can be called by owner only.
-
-Reverts if contract is paused.
-
-Events:
-```vyper=
-event Paused:
-    actor: address
-```
-
-##### `unpause()`
-
-Resumes updating allowance limit and allows `create_ldo_distribution` calls.
-Can be called by owner only.
-
-Reverts if contract is not paused.
-
-Events:
-```vyper=
-event Unpaused:
-    actor: address
-```
-
-##### `recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.sender)`
-
-Transfers the amount of the given ERC20 token to the recipient. Can be called by owner only.
-
-Events:
-```vyper=
-event ERC20TokenRecovered:
-    token: address
-    amount: uint256
-    recipient: address
-```
+**def recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.sender):**

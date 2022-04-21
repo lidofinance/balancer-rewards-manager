@@ -1,59 +1,54 @@
 import sys
-import time
-from brownie import (
-    BalancerRewardsController,
-    RewardsManager
-)
+from brownie import RewardsManager, BalancerLiquidityGaugeWrapper
+
 from utils.config import (
     lido_dao_agent_address,
+    balancer_rewards_contract,
+    min_rewards_amount,
     get_is_live,
     get_deployer_account,
-    prompt_bool,
-    get_env
+    prompt_bool
 )
 
 
 def main():
     is_live = get_is_live()
     deployer = get_deployer_account(is_live)
-    balancer_distributor = '0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa'
-    start_date = get_env('START_DATE')
 
-    print('Deployer:', deployer)
-    print('Balancer Distributor:', balancer_distributor)
-    print(
-        'Program start date:', 
-        time.ctime(int(start_date))
-    )
-
+    print(f'Deployer: {deployer}')
+    print(f'REWARDS CONTRACT: {balancer_rewards_contract}')
+    print(f'OWNER: {lido_dao_agent_address}')
+    print(f'MINIMAL REWARDS AMOUNT: {min_rewards_amount}')
     sys.stdout.write('Proceed? [y/n]: ')
 
     if not prompt_bool():
         print('Aborting')
         return
+    
+    tx_params={"from": deployer, "priority_fee": "2 gwei"}
 
-    (manager_contract, rewards_contract) = deploy_manager_and_reward_contract(
-        balancer_distributor,
-        start_date,
-        tx_params={"from": deployer, "priority_fee": "4 gwei"}
+    if not is_live: del tx_params["priority_fee"]
+
+    (manager_contract, wrapper_contract) = deploy_manager_and_wrapper(
+        balancer_rewards_contract,
+        min_rewards_amount,
+        tx_params
     )
 
     print('Manager contract: ', manager_contract)
-    print('Rewards contract: ', rewards_contract)
+    print('Wrapper contract: ', wrapper_contract)
 
 
-def deploy_manager_and_reward_contract(balancer_distributor, start_date, tx_params):
-    rewarder_contract = RewardsManager.deploy(tx_params)
-    rewards_contract =  BalancerRewardsController.deploy(
-        balancer_distributor, # _balancer_distributor
-        rewarder_contract, # rewards_manager
-        start_date,
-        tx_params,
-        publish_source=False,
+def deploy_manager_and_wrapper(balancer_rewards_contract, min_rewards_amount, tx_params):
+    manager_contract = RewardsManager.deploy(tx_params)
+    wrapper_contract = BalancerLiquidityGaugeWrapper.deploy(
+        lido_dao_agent_address,
+        min_rewards_amount,
+        balancer_rewards_contract,
+        manager_contract,
+        tx_params
     )
-    rewarder_contract.set_rewards_contract(rewards_contract, tx_params)
-    
-    rewards_contract.transfer_ownership(lido_dao_agent_address, tx_params)
-    rewarder_contract.transfer_ownership(lido_dao_agent_address, tx_params)
+    manager_contract.set_rewards_contract(wrapper_contract, tx_params)
+    manager_contract.transfer_ownership(lido_dao_agent_address, tx_params)
 
-    return (rewarder_contract, rewards_contract)
+    return (manager_contract, wrapper_contract)
