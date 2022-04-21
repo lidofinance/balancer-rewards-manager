@@ -16,7 +16,7 @@ This repository contains rewards manager and wrapper for [Balancer Liquidity Gau
 
 `poetry install`
 
-`poetry console`
+`poetry shell`
 
 #### Wrapper
 
