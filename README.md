@@ -1,6 +1,6 @@
 # Balancer rewards manager
 
-This repository contains rewards manager and wrapper for [Balancer Liquidity Gauge](https://etherscan.io/address/0xcD4722B7c24C29e0413BDCd9e51404B4539D14aE#code) for simplifying managing it via DAO voting and easytracks.
+This repository contains rewards manager and wrapper for [Balancer Liquidity Gauge](https://etherscan.io/address/0xcD4722B7c24C29e0413BDCd9e51404B4539D14aE#code) for simplifying managing it via DAO voting and Easy Track.
 
 ## Deploying Environment
 

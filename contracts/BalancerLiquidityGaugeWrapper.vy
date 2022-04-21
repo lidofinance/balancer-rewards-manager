@@ -67,7 +67,7 @@ distributor: public(address)
 min_rewards_amount: public(uint256)
 weekly_amount: public(uint256)
 LDO_TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
-WEEK_IN_SECONDS: constant(uint256) = 60480
+WEEK_IN_SECONDS: constant(uint256) = 7 * 24 * 60 * 60
 PERIOD_IN_WEEKS: constant(uint256) = 4
 
 
@@ -128,16 +128,16 @@ def start_next_rewards_period():
         distributing `self.weekly_amount` tokens throughout the period. The current
         rewards period must be finished by this time and LDO balance not lower then `self.weekly_amount`.
     """
-    rewards: address = self.rewards_contract
+    rewards_contract: address = self.rewards_contract
     amount: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
     rewards_amount: uint256 = self.weekly_amount
 
-    assert rewards != ZERO_ADDRESS and rewards_amount > 0, "manager: rewards disabled"
+    assert rewards_contract != ZERO_ADDRESS and rewards_amount > 0, "manager: rewards disabled"
     assert amount >= rewards_amount, "manager: low balance"
-    assert self._is_balancer_rewards_period_finished(rewards), "manager: rewards period not finished"
+    assert self._is_balancer_rewards_period_finished(rewards_contract), "manager: rewards period not finished"
 
-    ERC20(LDO_TOKEN).approve(rewards, rewards_amount)
-    BalancerLiquidityGauge(rewards).deposit_reward_token(LDO_TOKEN, rewards_amount)
+    ERC20(LDO_TOKEN).approve(rewards_contract, rewards_amount)
+    BalancerLiquidityGauge(rewards_contract).deposit_reward_token(LDO_TOKEN, rewards_amount)
 
     log NewRewardsPeriodStarted(rewards_amount)
 
@@ -208,7 +208,7 @@ def transfer_rewards_contract(_to: address):
     @notice Changes the reward contracts distributor. Can only be called by the current owner.
     """
     assert msg.sender == self.owner, "not permitted"
-    assert _to != ZERO_ADDRESS
+    assert _to != ZERO_ADDRESS, "zero address not allowed"
     BalancerLiquidityGauge(self.rewards_contract).set_reward_distributor(LDO_TOKEN, _to)
 
     log RewardsContractTransfered(_to)
@@ -231,6 +231,7 @@ def set_distributor(_new_disributor: address):
     @notice Sets the StakingRewards contract. Can only be called by the owner.
     """
     assert msg.sender == self.owner, "not permitted"
+    assert _new_disributor != ZERO_ADDRESS, "zero address not allowed"
     self.distributor = _new_disributor
 
     log DistributorUpdated(_new_disributor)
