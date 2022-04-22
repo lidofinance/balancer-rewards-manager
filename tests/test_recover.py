@@ -62,7 +62,7 @@ def test_recover_erc20_not_enough_balance(rewards_manager, ldo_token, ldo_agent)
     recover_amount = Wei("2 ether")
     ldo_token.transfer(rewards_manager, transfer_amount, {"from": ldo_agent})
 
-    with reverts("token transfer failed"):
+    with reverts("Transfer failed!"):
         rewards_manager.recover_erc20(ldo_token, recover_amount, {"from": ldo_agent})
 
 

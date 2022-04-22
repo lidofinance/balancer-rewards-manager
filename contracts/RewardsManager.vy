@@ -54,8 +54,8 @@ min_rewards_amount: public(uint256)
 weekly_amount: public(uint256)
 rewards_iteration: public(uint256)
 LDO_TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
-WEEK_IN_SECONDS: constant(uint256) = 7 * 24 * 60 * 60
-PERIOD_IN_WEEKS: constant(uint256) = 4
+SECONDS_PER_WEEK: constant(uint256) = 7 * 24 * 60 * 60
+WEEKS_PER_PERIOD: constant(uint256) = 4
 
 
 @external
@@ -158,7 +158,7 @@ def _period_finish() -> uint256:
     if (ldo_balance < amount):
         return self._balancer_period_finish(self.rewards_contract)
 
-    return self._balancer_period_finish(self.rewards_contract) + ldo_balance / amount * WEEK_IN_SECONDS
+    return self._balancer_period_finish(self.rewards_contract) + ldo_balance / amount * SECONDS_PER_WEEK
 
 
 @view
@@ -213,6 +213,23 @@ def set_rewards_contract(_rewards_contract: address):
     log RewardsContractUpdated(_rewards_contract)
 
 
+@internal
+def _safe_transfer(_token: address, _to: address, _value: uint256) -> bool:
+    _response: Bytes[32] = raw_call(
+        _token,
+        concat(
+            method_id("transfer(address,uint256)"),
+            convert(_to, bytes32),
+            convert(_value, bytes32)
+        ),
+        max_outsize=32
+    )
+    if len(_response) > 0:
+        assert convert(_response, bool), "Transfer failed!"
+
+    return True
+
+
 @external
 def recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.sender):
     """
@@ -222,6 +239,5 @@ def recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.s
     """
     assert msg.sender == self.owner, "not permitted"
     if _amount != 0:
-        assert ERC20(_token).transfer(_recipient, _amount), "token transfer failed"
-
+        self._safe_transfer(_token, _recipient, _amount)
         log ERC20Recovered(_token, _amount, _recipient)
