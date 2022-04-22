@@ -66,13 +66,15 @@ def balancer_admin(accounts):
 
 
 @pytest.fixture(scope='module')
-def rewards_manager(rewards_contract_mock, ldo_agent):
-    return RewardsManager.deploy(
+def rewards_manager(rewards_contract_mock, ldo_agent, deployer, ldo_token):
+    manager = RewardsManager.deploy(
         ldo_agent,
-        rewards_contract_mock,
         10**18,
+        rewards_contract_mock,
         {"from": deployer}
     )
+    rewards_contract_mock.set_reward_distributor(ldo_token, manager, {"from": deployer})
+    return manager
 
 
 @pytest.fixture(scope='module')

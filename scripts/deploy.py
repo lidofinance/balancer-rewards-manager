@@ -36,11 +36,3 @@ def main():
     )
 
     print('Manager contract: ', manager_contract)
-
-def deploy_manager(balancer_rewards_contract, min_rewards_amount, tx_params):
-    return RewardsManager.deploy(
-        lido_dao_agent_address,
-        min_rewards_amount,
-        balancer_rewards_contract,
-        tx_params
-    )

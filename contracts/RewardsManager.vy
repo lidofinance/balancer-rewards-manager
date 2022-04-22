@@ -26,10 +26,6 @@ event OwnershipTransferred:
     newOwner: indexed(address)
 
 
-event MinimalRewardsAmountUpdated:
-    newMinRewardsAmount: uint256
-
-
 event RewardsContractUpdated:
     newRewardsContract: indexed(address)
 
@@ -40,11 +36,6 @@ event RewardsContractTransfered:
 
 event WeeklyRewardsAmountUpdated:
     newWeeklyRewardsAmount: uint256
-
-
-event RewardsAdded:
-    amount: uint256
-    totalAmount: uint256
 
 
 event NewRewardsPeriodStarted:
@@ -78,7 +69,6 @@ def __init__(
     self.rewards_contract = rewards_contract
 
     log OwnershipTransferred(ZERO_ADDRESS, owner)
-    log MinimalRewardsAmountUpdated(min_rewards_amount)
     log RewardsContractUpdated(rewards_contract)
 
 
@@ -120,11 +110,15 @@ def start_next_rewards_period():
         Starts the next rewards period of duration `rewards_contract.deposit_reward_token(address, uint256)`,
         distributing `self.weekly_amount` tokens throughout the period. The current
         rewards period must be finished by this time and LDO balance not lower then `self.weekly_amount`.
+        Ones per 4 calls recalculates `self.weekly_amount` based on self LDO balance. Balance required 
+        not to be lower then `self.min_rewards_amount`
     """
     rewards_contract: address = self.rewards_contract
     amount: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
     iteration: uint256 = self.rewards_iteration    
     rewards_amount: uint256 = 0
+
+    assert rewards_contract != ZERO_ADDRESS, "manager: rewards disabled"
 
     if (iteration == 0):
         amount_to_distribute: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
@@ -142,9 +136,7 @@ def start_next_rewards_period():
     else: 
         self.rewards_iteration = 0
 
-
-    
-    assert rewards_contract != ZERO_ADDRESS and rewards_amount > 0, "manager: rewards disabled"
+    assert rewards_amount > 0, "manager: rewards disabled"
     assert amount >= rewards_amount, "manager: low balance"
     assert self._is_balancer_rewards_period_finished(rewards_contract), "manager: rewards period not finished"
 
@@ -219,28 +211,6 @@ def set_rewards_contract(_rewards_contract: address):
     self.rewards_contract = _rewards_contract
 
     log RewardsContractUpdated(_rewards_contract)
-
-
-@external
-def set_min_rewards_amount(_new_min_rewards_amount: uint256):
-    """
-    @notice Sets the minimal LDO amount to start new period. Can only be called by the owner.
-    """
-    assert msg.sender == self.owner, "not permitted"
-    self.min_rewards_amount = _new_min_rewards_amount
-
-    log MinimalRewardsAmountUpdated(_new_min_rewards_amount)
-
-
-@external
-def set_weekly_amount(_new_weekly_amount: uint256):
-    """
-    @notice Sets the weekly amount. Can only be called by the owner.
-    """
-    assert msg.sender == self.owner, "not permitted"
-    self.weekly_amount = _new_weekly_amount
-
-    log WeeklyRewardsAmountUpdated(_new_weekly_amount)
 
 
 @external
