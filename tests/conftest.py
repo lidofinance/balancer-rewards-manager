@@ -1,9 +1,8 @@
 import time
 import pytest
-from brownie import chain, accounts, BalancerLiquidityGaugeMock
-from scripts.deploy import deploy_manager_and_wrapper
+from brownie import chain, accounts, BalancerLiquidityGaugeMock, RewardsManager
 from utils.config import lido_dao_voting_address, balancer_rewards_contract
-
+from scripts.deploy import deploy_manager
 
 from utils.config import (
     ldo_token_address,
@@ -68,24 +67,12 @@ def balancer_admin(accounts):
 
 
 @pytest.fixture(scope='module')
-def rewards_manager_and_wrapper(deployer, rewards_contract_mock):
-    (manager_contract, wrapper_contract) =  deploy_manager_and_wrapper(
+def rewards_manager(rewards_contract_mock):
+    return deploy_manager(
         rewards_contract_mock,
         10**18,
         {"from": deployer}
     )
-    rewards_contract_mock.set_reward_distributor(ldo_token_address, wrapper_contract, {"from": deployer})
-    return (manager_contract, wrapper_contract)
-
-
-@pytest.fixture(scope='module')
-def rewards_manager(rewards_manager_and_wrapper):
-    return rewards_manager_and_wrapper[0]
-
-
-@pytest.fixture(scope='module')
-def balancer_wrapper(rewards_manager_and_wrapper):
-    return rewards_manager_and_wrapper[1]
 
 
 @pytest.fixture(scope='module')
