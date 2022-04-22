@@ -57,7 +57,6 @@ def test_owner_recovers_erc20_to_the_caller_by_default(
     assert recipient_balance_after - recipient_balance_before == transfer_amount
 
 
-
 def test_recover_erc20_not_enough_balance(rewards_manager, ldo_token, ldo_agent):
     transfer_amount = Wei("1 ether")
     recover_amount = Wei("2 ether")
@@ -65,7 +64,6 @@ def test_recover_erc20_not_enough_balance(rewards_manager, ldo_token, ldo_agent)
 
     with reverts("token transfer failed"):
         rewards_manager.recover_erc20(ldo_token, recover_amount, {"from": ldo_agent})
-
 
 
 def test_erc_20_recover_via_voting(
