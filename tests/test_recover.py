@@ -85,13 +85,13 @@ def test_erc_20_recover_via_voting(
 
     encoded_recover_calldata = rewards_manager.recover_erc20.encode_input(ldo_token_address, balance, stranger)
     recover_script = encode_call_script([(rewards_manager.address, encoded_recover_calldata)])
-    forwrded_script = encode_call_script([(lido_dao_agent_address, agent_contract.forward.encode_input(recover_script))])
+    forward_script = encode_call_script([(lido_dao_agent_address, agent_contract.forward.encode_input(recover_script))])
     
     (vote_id, _) = create_vote(
         voting=interface.Voting(lido_dao_voting_address),
         token_manager=interface.TokenManager(lido_dao_token_manager_address),
         vote_desc='',
-        evm_script=forwrded_script,
+        evm_script=forward_script,
         tx_params={"from": ldo_holder})
     
     helpers.execute_vote(vote_id=vote_id,

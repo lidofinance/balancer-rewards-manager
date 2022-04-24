@@ -30,7 +30,7 @@ event RewardsContractUpdated:
     newRewardsContract: indexed(address)
 
 
-event RewardsContractTransfered:
+event RewardsContractTransferred:
     newDistributor: indexed(address)
 
 
@@ -199,7 +199,7 @@ def transfer_rewards_contract(_to: address):
     assert _to != ZERO_ADDRESS, "zero address not allowed"
     BalancerLiquidityGauge(self.rewards_contract).set_reward_distributor(LDO_TOKEN, _to)
 
-    log RewardsContractTransfered(_to)
+    log RewardsContractTransferred(_to)
 
 
 @external

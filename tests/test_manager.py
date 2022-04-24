@@ -81,7 +81,7 @@ def test_rewards_contract_can_be_transferred(
     reward = rewards_contract_mock.reward_data(ldo_token)
     assert reward[1] == stranger
     helpers.assert_single_event_named(
-        "RewardsContractTransfered", 
+        "RewardsContractTransferred", 
         tx, 
         {"newDistributor": stranger}
     )
