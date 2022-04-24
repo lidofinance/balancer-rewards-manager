@@ -124,7 +124,7 @@ def start_next_rewards_period():
         amount_to_distribute: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
         assert amount >= self.min_rewards_amount, "manager: low balance"
         
-        rewards_amount = amount / PERIOD_IN_WEEKS
+        rewards_amount = amount / WEEKS_PER_PERIOD
         self.weekly_amount = rewards_amount
 
         log WeeklyRewardsAmountUpdated(rewards_amount)

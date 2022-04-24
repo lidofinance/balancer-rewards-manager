@@ -48,7 +48,7 @@ event WeeklyRewardsAmountUpdated:
 
 **def balancer_period_finish() -> uint256:**
 
-Returns timestamp of current period ending at Balancer Liquiditi Gauge
+Returns timestamp of current period ending at Balancer Liquidity Gauge
 
 **def is_balancer_rewards_period_finished() -> bool:**
 
@@ -68,12 +68,12 @@ event OwnershipTransferred:
 
 **def transfer_rewards_contract(_to: address):**
 
-Transefers permission to start new rewards period form self.
+Transfers permission to start new rewards period form self.
 
 Events:
 
 ```vyper=
-event RewardsContractTransfered:
+event RewardsContractTransferred:
     newDistributor: indexed(address)
 ```
 
