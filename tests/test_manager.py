@@ -109,10 +109,17 @@ def test_start_reward_period_fails_on_started_period(
     rewards_manager,
     dao_treasury,
     stranger,
-    ldo_token
+    ldo_token,
+    helpers
 ):
     ldo_token.transfer(rewards_manager, 10**18, {"from": dao_treasury})
-    rewards_manager.start_next_rewards_period({"from": stranger})
+    tx = rewards_manager.start_next_rewards_period({"from": stranger})
+    
+    helpers.assert_single_event_named(
+        "NewRewardsPeriodStarted", 
+        tx, 
+        {"amount": 0.25 * 10**18}
+    )
 
     chain.sleep(rewards_period-10) 
     chain.mine()

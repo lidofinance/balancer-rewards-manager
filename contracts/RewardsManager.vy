@@ -119,8 +119,9 @@ def start_next_rewards_period():
     rewards_amount: uint256 = 0
 
     assert rewards_contract != ZERO_ADDRESS, "manager: rewards disabled"
+    assert self._is_balancer_rewards_period_finished(rewards_contract), "manager: rewards period not finished"
 
-    if (iteration == 0):
+    if iteration == 0:
         amount_to_distribute: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
         assert amount >= self.min_rewards_amount, "manager: low balance"
         
@@ -130,15 +131,11 @@ def start_next_rewards_period():
         log WeeklyRewardsAmountUpdated(rewards_amount)
     else:
         rewards_amount = self.weekly_amount
-    
-    if iteration < 3: 
-        self.rewards_iteration = iteration + 1
-    else: 
-        self.rewards_iteration = 0
 
     assert rewards_amount > 0, "manager: rewards disabled"
     assert amount >= rewards_amount, "manager: low balance"
-    assert self._is_balancer_rewards_period_finished(rewards_contract), "manager: rewards period not finished"
+
+    self.rewards_iteration = (iteration + 1) % WEEKS_PER_PERIOD
 
     ERC20(LDO_TOKEN).approve(rewards_contract, rewards_amount)
     BalancerLiquidityGauge(rewards_contract).deposit_reward_token(LDO_TOKEN, rewards_amount)
@@ -151,14 +148,15 @@ def start_next_rewards_period():
 def _period_finish() -> uint256:
     amount: uint256 = self.weekly_amount
 
-    if (amount == 0): 
+    if amount == 0: 
         return 0
 
     ldo_balance: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
     if (ldo_balance < amount):
         return self._balancer_period_finish(self.rewards_contract)
 
-    return self._balancer_period_finish(self.rewards_contract) + ldo_balance / amount * SECONDS_PER_WEEK
+    return self._balancer_period_finish(self.rewards_contract) + \
+            (WEEKS_PER_PERIOD - self.rewards_iteration - 1) * SECONDS_PER_WEEK
 
 
 @view
