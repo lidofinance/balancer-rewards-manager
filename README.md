@@ -33,7 +33,7 @@ The following environment variables needs to be set for the script's execution:
 
 Returns estimated date of last rewards period start date
     
-    BLG.periodFinish + (WEEKS_PER_PERIOD - self.rewards_iteration - 1) * SECONDS_PER_WEEK
+    BLG.periodFinish + (WEEKS_PER_PERIOD - self.rewards_iteration ) % WEEKS_PER_PERIOD * SECONDS_PER_WEEK
     
 **def start_next_rewards_period()**
 
@@ -63,19 +63,7 @@ Returns timestamp of current period ending at Balancer Liquidity Gauge
 
 Sign of ending of current rewards period at Balancer Liquidity Gauge
 
-**def transfer_ownership(_to: address):**
-
-Changes `OWNER`. Can be called by owner only.
-
-Events:
-
-```vyper=
-event OwnershipTransferred:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-```
-
-**def transfer_rewards_contract(_to: address):**
+**def replace_me_by_other_distributor(_to: address):**
 
 Transfers permission to start new rewards period form self.
 

@@ -21,11 +21,6 @@ interface BalancerLiquidityGauge:
     def set_reward_distributor(_reward_token: address, _distributor: address): nonpayable
 
 
-event OwnershipTransferred:
-    previousOwner: indexed(address)
-    newOwner: indexed(address)
-
-
 event RewardsContractUpdated:
     newRewardsContract: indexed(address)
 
@@ -48,11 +43,11 @@ event ERC20Recovered:
     recipient: indexed(address)
 
 
-owner: public(address)
 rewards_contract: public(address)
 weekly_amount: public(uint256)
 rewards_iteration: public(uint256)
 min_rewards_amount: immutable(uint256)
+owner: immutable(address)
 LDO_TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 SECONDS_PER_WEEK: constant(uint256) = 7 * 24 * 60 * 60
 WEEKS_PER_PERIOD: constant(uint256) = 4
@@ -64,12 +59,17 @@ def __init__(
     _min_rewards_amount: uint256, 
     _rewards_contract: address
 ):
-    self.owner = _owner
+    owner = _owner
     min_rewards_amount = _min_rewards_amount
     self.rewards_contract = _rewards_contract
 
-    log OwnershipTransferred(ZERO_ADDRESS, _owner)
     log RewardsContractUpdated(_rewards_contract)
+
+
+@view
+@external
+def owner() -> address:
+    return owner
 
 
 @view
@@ -145,17 +145,8 @@ def start_next_rewards_period():
 @view
 @internal
 def _period_finish() -> uint256:
-    amount: uint256 = self.weekly_amount
-
-    if amount == 0: 
-        return 0
-
-    ldo_balance: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
-    if (ldo_balance < amount):
-        return self._balancer_period_finish(self.rewards_contract)
-
     return self._balancer_period_finish(self.rewards_contract) + \
-            (WEEKS_PER_PERIOD - self.rewards_iteration - 1) * SECONDS_PER_WEEK
+        ((WEEKS_PER_PERIOD - self.rewards_iteration) % WEEKS_PER_PERIOD) * SECONDS_PER_WEEK
 
 
 @view
@@ -177,22 +168,11 @@ def is_rewards_period_finished() -> bool:
     
 
 @external
-def transfer_ownership(_to: address):
-    """
-    @notice Changes the contract owner. Can only be called by the current owner.
-    """
-    current_owner: address = self.owner
-    assert msg.sender == current_owner, "not permitted"
-    self.owner = _to
-    log OwnershipTransferred(current_owner, _to)
-
-
-@external
-def transfer_rewards_contract(_to: address):
+def replace_me_by_other_distributor(_to: address):
     """
     @notice Changes the reward contracts distributor. Can only be called by the current owner.
     """
-    assert msg.sender == self.owner, "not permitted"
+    assert msg.sender == owner, "not permitted"
     assert _to != ZERO_ADDRESS, "zero address not allowed"
     BalancerLiquidityGauge(self.rewards_contract).set_reward_distributor(LDO_TOKEN, _to)
 
@@ -204,7 +184,7 @@ def set_rewards_contract(_rewards_contract: address):
     """
     @notice Sets the rewards contract. Can only be called by the owner.
     """
-    assert msg.sender == self.owner, "not permitted"
+    assert msg.sender == owner, "not permitted"
     self.rewards_contract = _rewards_contract
 
     log RewardsContractUpdated(_rewards_contract)
@@ -234,7 +214,7 @@ def recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.s
         Transfers the given _amount of the given ERC20 token from self
         to the recipient. Can only be called by the owner.
     """
-    assert msg.sender == self.owner, "not permitted"
+    assert msg.sender == owner, "not permitted"
     assert _recipient != ZERO_ADDRESS, "zero address not allowed"
     if _amount != 0:
         self._safe_transfer(_token, _recipient, _amount)

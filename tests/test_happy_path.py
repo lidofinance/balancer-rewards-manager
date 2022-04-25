@@ -32,6 +32,7 @@ def test_happy_path(
     rewards_contract.set_reward_distributor(ldo_token, rewards_manager, {"from": balancer_admin})
     reward_data = rewards_contract.reward_data(ldo_token)
     assert reward_data[1] == rewards_manager
+    assert reward_data[2] == rewards_manager.period_finish()
 
     for month in range(2):
         with reverts("manager: low balance"):
@@ -39,7 +40,15 @@ def test_happy_path(
 
         ldo_token.transfer(rewards_manager, 4*rewards_amount, {"from": dao_treasury})
         balance_before = ldo_token.balanceOf(rewards_contract)
+
+        
+        reward_data = rewards_contract.reward_data(ldo_token)
+        assert reward_data[2] == rewards_manager.period_finish()
+
         tx = rewards_manager.start_next_rewards_period({"from": stranger})
+        
+        reward_data = rewards_contract.reward_data(ldo_token)
+        assert reward_data[2] + rewards_period * 3 == rewards_manager.period_finish()
 
         helpers.assert_single_event_named(
             "NewRewardsPeriodStarted", 
@@ -66,8 +75,14 @@ def test_happy_path(
 
         for week in range (3):
 
+            reward_data = rewards_contract.reward_data(ldo_token)
+            assert reward_data[2] + rewards_period * (3 - week) == rewards_manager.period_finish()
+
             balance_before = ldo_token.balanceOf(rewards_contract)
             tx = rewards_manager.start_next_rewards_period({"from": stranger})
+
+            reward_data = rewards_contract.reward_data(ldo_token)
+            assert reward_data[2] + rewards_period * (3 - week - 1) == rewards_manager.period_finish()
             
             helpers.assert_single_event_named(
                 "NewRewardsPeriodStarted", 

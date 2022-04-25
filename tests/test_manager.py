@@ -11,31 +11,6 @@ def test_init(rewards_manager, rewards_contract_mock, ldo_agent):
     assert rewards_manager.weekly_amount() == 0
 
 
-def test_stranger_can_not_transfer_ownership(rewards_manager, stranger):
-    with reverts("not permitted"):
-        rewards_manager.transfer_ownership(stranger, {"from": stranger})
-
-
-def test_ownership_can_be_transferred(rewards_manager, ldo_agent, stranger, helpers):
-    tx = rewards_manager.transfer_ownership(stranger, {"from": ldo_agent})
-    assert rewards_manager.owner() == stranger
-    helpers.assert_single_event_named(
-        "OwnershipTransferred", 
-        tx, 
-        {"previousOwner": ldo_agent, "newOwner": stranger}
-    )
-
-
-def test_ownership_can_be_transferred_to_zero_address(rewards_manager, ldo_agent, helpers):
-    tx = rewards_manager.transfer_ownership(ZERO_ADDRESS, {"from": ldo_agent})
-    assert rewards_manager.owner() == ZERO_ADDRESS
-    helpers.assert_single_event_named(
-        "OwnershipTransferred", 
-        tx, 
-        {"previousOwner": ldo_agent, "newOwner": ZERO_ADDRESS}
-    )
-
-
 def test_stranger_can_not_set_rewards_contract(rewards_manager, stranger):
     assert rewards_manager.rewards_contract()   != ZERO_ADDRESS
     with reverts("not permitted"):
@@ -53,9 +28,9 @@ def test_owner_can_set_rewards_contract(rewards_manager, ldo_agent, helpers):
     )
 
 
-def test_stranger_can_not_transfer_rewards_contract(rewards_manager, stranger):
+def test_stranger_can_not_replace_me_by_other_distributor(rewards_manager, stranger):
     with reverts("not permitted"):
-        rewards_manager.transfer_rewards_contract(stranger, {"from": stranger})
+        rewards_manager.replace_me_by_other_distributor(stranger, {"from": stranger})
 
 
 def test_stranger_can_check_is_rewards_period_finished(rewards_manager, stranger):
@@ -76,7 +51,7 @@ def test_rewards_contract_can_be_transferred(
 ):
     reward = rewards_contract_mock.reward_data(ldo_token)
     assert reward[1] == rewards_manager
-    tx = rewards_manager.transfer_rewards_contract(stranger, {"from": ldo_agent})
+    tx = rewards_manager.replace_me_by_other_distributor(stranger, {"from": ldo_agent})
     reward = rewards_contract_mock.reward_data(ldo_token)
     assert reward[1] == stranger
     helpers.assert_single_event_named(
