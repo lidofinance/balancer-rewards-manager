@@ -100,7 +100,7 @@ Transfers the amount of the given ERC20 token to the recipient. Can be called by
 Events:
 ```vyper=
 event ERC20TokenRecovered:
-    token: address
+    token: indexed(address)
     amount: uint256
-    recipient: address
+    recipient: indexed(address)
 ```
