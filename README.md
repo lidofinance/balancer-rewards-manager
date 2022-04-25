@@ -27,7 +27,7 @@ The following environment variables needs to be set for the script's execution:
 
 ## Specification
 
-#### RewardsManager.sol
+#### [RewardsManager.vy](contracts/RewardsManager.vy)
 
 **def period_finish() -> uint256: view**
 
