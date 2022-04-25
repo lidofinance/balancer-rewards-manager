@@ -8,7 +8,6 @@ rewards_period = 3600 * 24 * 7
 def test_init(rewards_manager, rewards_contract_mock, ldo_agent):
     assert rewards_manager.owner() == ldo_agent
     assert rewards_manager.rewards_contract() == rewards_contract_mock
-    assert rewards_manager.min_rewards_amount() == 10**18
     assert rewards_manager.weekly_amount() == 0
 
 

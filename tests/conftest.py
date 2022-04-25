@@ -87,6 +87,16 @@ def rewards_multisig(accounts):
     return accounts.at('0x87d93d9b2c672bf9c9642d853a8682546a5012b5',force=True)
 
 
+@pytest.fixture(scope='module')
+def usdt_holder(accounts):
+    return accounts.at('0x5754284f345afc66a98fbb0a0afe71e0f007b949',force=True)
+
+
+@pytest.fixture(scope='module')
+def usdt_token(interface):
+    return interface.ERC20('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+
+
 class Helpers:
     @staticmethod
     def filter_events_from(addr, events):

@@ -24,7 +24,7 @@ This repository contains rewards manager for [Balancer Liquidity Gauge](https://
     
 Returns estimated date of last rewards period start date
     
-    BLG.periodFinish + (LDO.balanceOf(self)/self.rewardAmount) * SECONDS_PER_WEEK
+    BLG.periodFinish + (WEEKS_PER_PERIOD - self.rewards_iteration - 1) * SECONDS_PER_WEEK
     
 **def start_next_rewards_period()**
 
@@ -46,11 +46,11 @@ event WeeklyRewardsAmountUpdated:
     newWeeklyRewardsAmount: uint256
 ```
 
-**def balancer_period_finish() -> uint256:**
+**def balancer_period_finish() -> uint256: view**
 
 Returns timestamp of current period ending at Balancer Liquidity Gauge
 
-**def is_balancer_rewards_period_finished() -> bool:**
+**def is_balancer_rewards_period_finished() -> bool: view**
 
 Sign of ending of current rewards period at Balancer Liquidity Gauge
 

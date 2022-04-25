@@ -1,5 +1,5 @@
 import pytest
-from brownie import Wei, reverts, interface
+from brownie import Wei, reverts, interface, ZERO_ADDRESS
 from utils.config import (
     lido_dao_agent_address,
     ldo_token_address,
@@ -22,6 +22,17 @@ def test_owner_recovers_erc20_with_zero_amount(
     balance_after = ldo_token.balanceOf(ldo_agent)
     assert balance_before == balance_after
     assert ldo_token.balanceOf(rewards_manager) == rewards_amount
+
+
+def test_owner_recovers_erc20_with_zero_recipient(
+    rewards_manager, ldo_token, ldo_agent, dao_treasury
+):
+    rewards_amount = Wei("1 ether")
+
+    ldo_token.transfer(rewards_manager, rewards_amount, {"from": dao_treasury})
+
+    with reverts("zero address not allowed"):
+        rewards_manager.recover_erc20(ldo_token, 0, ZERO_ADDRESS, {"from": ldo_agent})
 
 
 def test_owner_recovers_erc20_with_balance(
@@ -100,3 +111,22 @@ def test_erc_20_recover_via_voting(
     
     assert ldo_token.balanceOf(rewards_manager) == 0
     assert ldo_token.balanceOf(stranger) == balance
+
+
+def test_owner_recovers_usdt_with_balance(
+    rewards_manager, ldo_agent, stranger, usdt_holder, usdt_token
+):
+    recipient = stranger
+    transfer_amount = 10**8
+    recover_amount = transfer_amount/2
+    usdt_token.transfer(rewards_manager, transfer_amount, {"from": usdt_holder})
+    assert usdt_token.balanceOf(rewards_manager) == transfer_amount
+
+    recipient_balance_before = usdt_token.balanceOf(recipient)
+    tx = rewards_manager.recover_erc20(
+        usdt_token, recover_amount, recipient, {"from": ldo_agent}
+    )
+    recipient_balance_after = usdt_token.balanceOf(recipient)
+
+    assert usdt_token.balanceOf(rewards_manager) == transfer_amount - recover_amount
+    assert recipient_balance_after - recipient_balance_before == recover_amount

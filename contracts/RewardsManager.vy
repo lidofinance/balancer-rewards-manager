@@ -50,9 +50,9 @@ event ERC20Recovered:
 
 owner: public(address)
 rewards_contract: public(address)
-min_rewards_amount: public(uint256)
 weekly_amount: public(uint256)
 rewards_iteration: public(uint256)
+min_rewards_amount: immutable(uint256)
 LDO_TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 SECONDS_PER_WEEK: constant(uint256) = 7 * 24 * 60 * 60
 WEEKS_PER_PERIOD: constant(uint256) = 4
@@ -60,16 +60,16 @@ WEEKS_PER_PERIOD: constant(uint256) = 4
 
 @external
 def __init__(
-    owner: address, 
-    min_rewards_amount: uint256, 
-    rewards_contract: address
+    _owner: address, 
+    _min_rewards_amount: uint256, 
+    _rewards_contract: address
 ):
-    self.owner = owner
-    self.min_rewards_amount = min_rewards_amount
-    self.rewards_contract = rewards_contract
+    self.owner = _owner
+    min_rewards_amount = _min_rewards_amount
+    self.rewards_contract = _rewards_contract
 
-    log OwnershipTransferred(ZERO_ADDRESS, owner)
-    log RewardsContractUpdated(rewards_contract)
+    log OwnershipTransferred(ZERO_ADDRESS, _owner)
+    log RewardsContractUpdated(_rewards_contract)
 
 
 @view
@@ -108,10 +108,10 @@ def start_next_rewards_period():
     """
     @notice
         Starts the next rewards period of duration `rewards_contract.deposit_reward_token(address, uint256)`,
-        distributing `self.weekly_amount` tokens throughout the period. The current
+        distributing `self.weekly_amount` tokens throughout each week of the period. The current
         rewards period must be finished by this time and LDO balance not lower then `self.weekly_amount`.
         Ones per 4 calls recalculates `self.weekly_amount` based on self LDO balance. Balance required 
-        not to be lower then `self.min_rewards_amount`
+        not to be lower then `min_rewards_amount`
     """
     rewards_contract: address = self.rewards_contract
     amount: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
@@ -122,8 +122,7 @@ def start_next_rewards_period():
     assert self._is_balancer_rewards_period_finished(rewards_contract), "manager: rewards period not finished"
 
     if iteration == 0:
-        amount_to_distribute: uint256 = ERC20(LDO_TOKEN).balanceOf(self)
-        assert amount >= self.min_rewards_amount, "manager: low balance"
+        assert amount >= min_rewards_amount, "manager: low balance"
         
         rewards_amount = amount / WEEKS_PER_PERIOD
         self.weekly_amount = rewards_amount
@@ -236,6 +235,7 @@ def recover_erc20(_token: address, _amount: uint256, _recipient: address = msg.s
         to the recipient. Can only be called by the owner.
     """
     assert msg.sender == self.owner, "not permitted"
+    assert _recipient != ZERO_ADDRESS, "zero address not allowed"
     if _amount != 0:
         self._safe_transfer(_token, _recipient, _amount)
         log ERC20Recovered(_token, _amount, _recipient)
