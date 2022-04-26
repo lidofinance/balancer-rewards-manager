@@ -1,5 +1,6 @@
 import sys
-from brownie import RewardsManager
+from brownie import RewardsManager, network
+import json
 
 from utils.config import (
     lido_dao_agent_address,
@@ -34,5 +35,15 @@ def main():
         balancer_rewards_contract,
         tx_params
     )
+
+    with open(f'deployed-{network.show_active()}.json', 'w') as f:
+        json.dump({
+            "networkId": network.chain.id,
+            "balancerRewardsManager": {
+                "baseAddress": manager_contract.address,
+                "tx": manager_contract.tx.txid
+            }
+        }, f)
+
 
     print('Manager contract: ', manager_contract)
