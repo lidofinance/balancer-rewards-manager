@@ -1,9 +1,7 @@
 import time
 import pytest
-from brownie import chain, accounts
-from scripts.deploy import deploy_manager_and_reward_contract
-from utils.config import lido_dao_voting_address
-
+from brownie import chain, accounts, BalancerLiquidityGaugeMock, RewardsManager
+from utils.config import lido_dao_voting_address, balancer_rewards_contract
 
 from utils.config import (
     ldo_token_address,
@@ -22,18 +20,9 @@ def deployer(accounts):
 
 
 @pytest.fixture(scope='module')
-def ape(accounts):
-    return accounts[1]
-
-
-@pytest.fixture(scope='module')
-def balancer_distributor(accounts):
-    return accounts.at('0xadda10ac6195d272543c6ed3a4a0d7fdd25aa4fa',force=True)
-
-
-@pytest.fixture(scope='module')
 def stranger(accounts):
     return accounts[9]
+
 
 @pytest.fixture(scope='module')
 def ldo_holder(accounts, ldo_token, dao_treasury):
@@ -52,8 +41,8 @@ def ldo_token(interface):
 
 
 @pytest.fixture(scope='module')
-def ldo_agent(interface):
-    return interface.ERC20(lido_dao_agent_address)
+def ldo_agent():
+    return accounts.at(lido_dao_agent_address, force = True)
 
 
 @pytest.fixture(scope='module')
@@ -62,29 +51,30 @@ def dao_treasury():
 
 
 @pytest.fixture(scope='module')
-def program_start_date():
-    begining_of_the_day = int(time.time()/86400)*86400
-    return begining_of_the_day + 604800
+def rewards_contract_mock(deployer):
+    return BalancerLiquidityGaugeMock.deploy(deployer, ldo_token_address, {"from": deployer})
 
 
 @pytest.fixture(scope='module')
-def merkle_contract(interface):
-    return interface.MerkleOrchard('0xdAE7e32ADc5d490a43cCba1f0c736033F2b4eFca')
+def rewards_contract(interface):
+    return interface.BalancerLiquidityGauge(balancer_rewards_contract)
 
 
 @pytest.fixture(scope='module')
-def rewarder(deployer, balancer_distributor, program_start_date):
-    return deploy_manager_and_reward_contract(balancer_distributor, program_start_date, {"from": deployer})
+def balancer_admin(accounts):
+    return accounts.at('0x8f42adbba1b16eaae3bb5754915e0d06059add75', force = True)
 
 
 @pytest.fixture(scope='module')
-def rewards_manager(rewarder):
-    return rewarder[0]
-
-
-@pytest.fixture(scope='module')
-def rewards_contract(rewarder):
-    return rewarder[1]
+def rewards_manager(rewards_contract_mock, ldo_agent, deployer, ldo_token):
+    manager = RewardsManager.deploy(
+        ldo_agent,
+        10**18,
+        rewards_contract_mock,
+        {"from": deployer}
+    )
+    rewards_contract_mock.set_reward_distributor(ldo_token, manager, {"from": deployer})
+    return manager
 
 
 @pytest.fixture(scope='module')
@@ -95,6 +85,16 @@ def easytrack_contract(interface):
 @pytest.fixture(scope='module')
 def rewards_multisig(accounts):
     return accounts.at('0x87d93d9b2c672bf9c9642d853a8682546a5012b5',force=True)
+
+
+@pytest.fixture(scope='module')
+def usdt_holder(accounts):
+    return accounts.at('0x5754284f345afc66a98fbb0a0afe71e0f007b949',force=True)
+
+
+@pytest.fixture(scope='module')
+def usdt_token(interface):
+    return interface.ERC20('0xdAC17F958D2ee523a2206206994597C13D831ec7')
 
 
 class Helpers:
